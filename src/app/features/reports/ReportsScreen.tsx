@@ -2,12 +2,17 @@ import {
   Download, FileText, ArrowLeftRight, AlertTriangle, RefreshCw, BarChart3,
 } from "lucide-react";
 import { Btn, Card } from "../../components/shared";
+import { useAuth, hasPermission } from "../../auth";
 
 // ─────────────────────────────────────────────
 // Reports
 // ─────────────────────────────────────────────
 
 export function ReportsScreen() {
+  const { currentUser } = useAuth();
+  const canExport = hasPermission(currentUser, "reports.export");
+  const canManageSettings = hasPermission(currentUser, "settings.manage");
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
@@ -15,7 +20,7 @@ export function ReportsScreen() {
           <h1 className="text-2xl font-bold text-[#2B2B2B]">التقارير والتحليلات</h1>
           <p className="text-sm text-[#6B7280] mt-0.5">تقارير تفاعلية معتمدة على Power BI وتحليلات متقدمة</p>
         </div>
-        <Btn variant="secondary" icon={<Download size={14} />}>تصدير تقرير</Btn>
+        {canExport && <Btn variant="secondary" icon={<Download size={14} />}>تصدير تقرير</Btn>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -64,7 +69,7 @@ export function ReportsScreen() {
             <p className="text-xs text-[#6B7280] mt-1 max-w-xs">
               سيتم تضمين التقارير التفاعلية هنا بعد تكوين اتصال Power BI Embedded وتوفير بيانات الاعتماد
             </p>
-            <Btn variant="secondary" size="sm" className="mt-4 mx-auto">تكوين الاتصال</Btn>
+            {canManageSettings && <Btn variant="secondary" size="sm" className="mt-4 mx-auto">تكوين الاتصال</Btn>}
           </div>
         </div>
       </Card>

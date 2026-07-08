@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import {
   Search, Plus, Upload, Download, SlidersHorizontal, ListChecks, X,
   Package, AlertTriangle, UserCheck, ShieldAlert, PackageCheck,
@@ -7,6 +7,7 @@ import type { Screen } from "../../types";
 import { ASSETS } from "../../data/mock";
 import { getWarrantyState } from "../../utils/warranty";
 import { Btn, Card, Skeleton, StatCard } from "../../components/shared";
+import { useAuth, hasPermission } from "../../auth";
 import { AssetsFilterSidebar, EMPTY_FILTERS, matchesFilters } from "./AssetsFilterSidebar";
 import type { AssetFilters } from "./AssetsFilterSidebar";
 import { AssetsTable } from "./AssetsTable";
@@ -15,10 +16,6 @@ import { AssetDetailsPanel } from "./AssetDetailsPanel";
 // ─────────────────────────────────────────────
 // Assets Management
 // ─────────────────────────────────────────────
-
-const DEFAULT_PANEL_WIDTH = 320;
-const MIN_PANEL_WIDTH = 260;
-const MAX_PANEL_WIDTH = 480;
 
 export function AssetsScreen({ onOpenAsset }: {
   onOpenAsset: (assetId: string | null, screen: Screen) => void;
@@ -30,10 +27,6 @@ export function AssetsScreen({ onOpenAsset }: {
   const [selectedAssetId, setSelectedAssetId]     = useState<string | null>(null);
   const [checkedIds, setCheckedIds]     = useState<Set<string>>(new Set());
   const [page, setPage]                 = useState(1);
-  const [panelWidth, setPanelWidth]     = useState(DEFAULT_PANEL_WIDTH);
-  const [panelCollapsed, setPanelCollapsed] = useState(false);
-  const [panelMobileOpen, setPanelMobileOpen] = useState(false);
-  const resizing = useRef(false);
   const perPage = 6;
 
   useEffect(() => {
@@ -54,17 +47,11 @@ export function AssetsScreen({ onOpenAsset }: {
   useEffect(() => {
     if (selectedAssetId && !filtered.some(a => a.id === selectedAssetId)) {
       setSelectedAssetId(null);
-      setPanelMobileOpen(false);
     }
   }, [filtered, selectedAssetId]);
 
   const updateSearch = (v: string) => { setSearch(v); setPage(1); };
   const updateFilters = (f: AssetFilters) => { setFilters(f); setPage(1); };
-
-  const handleSelectAsset = (id: string) => {
-    setSelectedAssetId(id);
-    setPanelMobileOpen(true);
-  };
 
   const toggleChecked = (id: string) => {
     setCheckedIds(prev => {
@@ -73,21 +60,6 @@ export function AssetsScreen({ onOpenAsset }: {
       return next;
     });
   };
-
-  useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      if (!resizing.current) return;
-      const next = Math.min(MAX_PANEL_WIDTH, Math.max(MIN_PANEL_WIDTH, window.innerWidth - e.clientX));
-      setPanelWidth(next);
-    };
-    const onUp = () => { resizing.current = false; };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-  }, []);
 
   const totalAssets      = ASSETS.length;
   const criticalCount    = ASSETS.filter(a => a.businessCriticality === "Critical").length;
@@ -105,7 +77,9 @@ export function AssetsScreen({ onOpenAsset }: {
     { label: "الأصول المتاحة",         value: String(availableCount),subtext: pct(availableCount),           icon: PackageCheck,  iconBg: "#EDF3EF", iconColor: "#3D6B47" },
   ];
 
-  const panelColumn = panelCollapsed ? "36px" : `${panelWidth}px`;
+  const { currentUser } = useAuth();
+  const canCreate = hasPermission(currentUser, "assets.create");
+  const canExport = hasPermission(currentUser, "reports.export");
 
   return (
     <div className="space-y-5">
@@ -123,8 +97,12 @@ export function AssetsScreen({ onOpenAsset }: {
           <span title="قريباً">
             <Btn variant="secondary" size="sm" icon={<Upload size={13} />} disabled>استيراد</Btn>
           </span>
-          <Btn variant="secondary" size="sm" icon={<Download size={13} />}>تصدير</Btn>
-          <Btn variant="primary" icon={<Plus size={15} />} onClick={() => onOpenAsset(null, "add-asset")}>إضافة أصل</Btn>
+          {canExport && (
+            <Btn variant="secondary" size="sm" icon={<Download size={13} />}>تصدير</Btn>
+          )}
+          {canCreate && (
+            <Btn variant="primary" icon={<Plus size={15} />} onClick={() => onOpenAsset(null, "add-asset")}>إضافة أصل</Btn>
+          )}
         </div>
       </div>
 
@@ -135,17 +113,14 @@ export function AssetsScreen({ onOpenAsset }: {
           : stats.map(s => <StatCard key={s.label} {...s} />)}
       </div>
 
-      {/* Three-column layout: Filters (right) | Table | Details (left) in RTL */}
-      <div
-        className="grid grid-cols-1 gap-5 items-start xl:grid-cols-[260px_1fr_var(--panel)]"
-        style={{ "--panel": panelColumn } as CSSProperties}
-      >
+      {/* Two-column layout: Filters (right) | Table + Details below (left) in RTL */}
+      <div className="grid grid-cols-1 gap-5 items-start xl:grid-cols-[260px_1fr]">
         {/* Filters — right side in RTL */}
         <div className={`${mobileFiltersOpen ? "block" : "hidden"} xl:block`}>
           <AssetsFilterSidebar filters={filters} onChange={updateFilters} />
         </div>
 
-        {/* Center — Assets table */}
+        {/* Center — table, full width, details panel below it */}
         <div className="space-y-4 min-w-0">
           <div className="relative">
             <Search size={16} className="absolute top-1/2 -translate-y-1/2 right-4 text-[#6B7280]" />
@@ -159,7 +134,7 @@ export function AssetsScreen({ onOpenAsset }: {
             <div className="flex items-center gap-3 px-4 py-2.5 bg-[#EEF0F8] border border-[#D5DCE8] rounded-xl">
               <ListChecks size={15} className="text-[#2A3172] flex-shrink-0" />
               <span className="text-sm font-medium text-[#2A3172]">{checkedIds.size} محدد</span>
-              <Btn variant="ghost" size="sm">تصدير المحدد</Btn>
+              {canExport && <Btn variant="ghost" size="sm">تصدير المحدد</Btn>}
               <button onClick={() => setCheckedIds(new Set())}
                 className="mr-auto flex items-center gap-1 text-xs text-[#2A3172] hover:text-[#222966] transition-colors cursor-pointer">
                 <X size={12} /> إلغاء التحديد
@@ -175,7 +150,7 @@ export function AssetsScreen({ onOpenAsset }: {
             ) : (
               <>
                 <AssetsTable assets={paginated} selectedId={selectedAssetId} checkedIds={checkedIds}
-                  onSelect={handleSelectAsset} onOpenAsset={onOpenAsset} onToggleCheck={toggleChecked} />
+                  onSelect={setSelectedAssetId} onOpenAsset={onOpenAsset} onToggleCheck={toggleChecked} />
 
                 {totalPages > 1 && (
                   <div className="p-4 border-t border-[#E5E7EB] flex items-center justify-between">
@@ -195,30 +170,9 @@ export function AssetsScreen({ onOpenAsset }: {
               </>
             )}
           </Card>
-        </div>
 
-        {/* Details panel — left side in RTL */}
-        <div className={`${panelMobileOpen && selectedAsset ? "block" : "hidden"} xl:block relative min-w-0`}>
-          {!panelCollapsed && (
-            <div
-              className="hidden xl:block absolute -right-1 top-0 bottom-0 w-2 cursor-col-resize z-10 group"
-              onMouseDown={() => { resizing.current = true; }}
-              title="سحب لتغيير العرض">
-              <div className="w-0.5 h-full mx-auto bg-transparent group-hover:bg-[#D0A165]/40 transition-colors rounded-full" />
-            </div>
-          )}
-          <AssetDetailsPanel
-            selectedAsset={selectedAsset}
-            collapsed={panelCollapsed}
-            onToggleCollapse={() => setPanelCollapsed(c => !c)}
-          />
-          {panelMobileOpen && selectedAsset && (
-            <button
-              onClick={() => setPanelMobileOpen(false)}
-              className="xl:hidden mt-2 w-full py-2 text-xs text-[#6B7280] hover:text-[#2A3172] transition-colors cursor-pointer">
-              إخفاء التفاصيل
-            </button>
-          )}
+          {/* Details panel — full width, below the table */}
+          <AssetDetailsPanel selectedAsset={selectedAsset} />
         </div>
       </div>
     </div>

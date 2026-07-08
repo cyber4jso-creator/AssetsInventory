@@ -4,9 +4,9 @@ import {
   Users, Shield, Bell, Settings, LogOut, Bot, History, Menu,
 } from "lucide-react";
 import type { Screen } from "../../types";
-import { useAuth, hasPermission, ROLE_LABELS } from "../../auth";
+import { useAuth, hasPermission, ROLE_LABELS, SCREEN_PERMISSIONS } from "../../auth";
 
-const NAV_ITEMS: Array<{ id?: Screen; label: string; icon?: ElementType; permission?: "users.manage" }> = [
+const NAV_ITEMS: Array<{ id?: Screen; label: string; icon?: ElementType }> = [
   { id: "dashboard",       label: "لوحة التحكم",        icon: LayoutDashboard },
   {                        label: "إدارة الأصول"                               },
   { id: "assets",          label: "قائمة الأصول",        icon: Package         },
@@ -16,8 +16,8 @@ const NAV_ITEMS: Array<{ id?: Screen; label: string; icon?: ElementType; permiss
   { id: "requests",        label: "الطلبات",              icon: ClipboardList   },
   { id: "reports",         label: "التقارير",             icon: BarChart3       },
   {                        label: "الإدارة"                                     },
-  { id: "user-management", label: "المستخدمون",           icon: Users,   permission: "users.manage" },
-  { id: "roles",           label: "الأدوار والصلاحيات",  icon: Shield,  permission: "users.manage" },
+  { id: "user-management", label: "المستخدمون",           icon: Users           },
+  { id: "roles",           label: "الأدوار والصلاحيات",  icon: Shield          },
   { id: "audit-log",       label: "سجل المراجعة",        icon: History         },
 ];
 
@@ -27,6 +27,11 @@ const BTM_NAV: Array<{ id: Screen; label: string; icon: ElementType }> = [
   { id: "settings",      label: "الإعدادات",     icon: Settings },
 ];
 
+// Drop any section header left with no visible items before the next header/end.
+function pruneEmptyHeaders<T extends { id?: Screen }>(items: T[]): T[] {
+  return items.filter((item, i) => item.id || (items[i + 1] && items[i + 1].id));
+}
+
 export function Sidebar({ screen, onNavigate, collapsed, onToggle, onLogout }: {
   screen: Screen;
   onNavigate: (s: Screen) => void;
@@ -35,6 +40,17 @@ export function Sidebar({ screen, onNavigate, collapsed, onToggle, onLogout }: {
   onLogout: () => void;
 }) {
   const { currentUser } = useAuth();
+  const visibleNavItems = pruneEmptyHeaders(
+    NAV_ITEMS.filter(item => {
+      if (!item.id) return true;
+      const perm = SCREEN_PERMISSIONS[item.id];
+      return !perm || hasPermission(currentUser, perm);
+    })
+  );
+  const visibleBtmNav = BTM_NAV.filter(item => {
+    const perm = SCREEN_PERMISSIONS[item.id];
+    return !perm || hasPermission(currentUser, perm);
+  });
 
   return (
     <aside className="flex flex-col h-full flex-shrink-0 transition-all duration-300 overflow-hidden print:hidden"
@@ -56,7 +72,7 @@ export function Sidebar({ screen, onNavigate, collapsed, onToggle, onLogout }: {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2">
-        {NAV_ITEMS.filter(item => !item.permission || hasPermission(currentUser, item.permission)).map((item, i) => {
+        {visibleNavItems.map((item, i) => {
           if (!item.id) {
             if (collapsed) return null;
             return (
@@ -86,7 +102,7 @@ export function Sidebar({ screen, onNavigate, collapsed, onToggle, onLogout }: {
       {/* Bottom */}
       <div className="px-2 pb-2 flex-shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
         <div className="pt-2">
-          {BTM_NAV.map(item => {
+          {visibleBtmNav.map(item => {
             const Icon = item.icon;
             const active = screen === item.id;
             return (

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import type { Screen } from "./types";
 import { NOTIFICATIONS } from "./data/mock";
-import { AuthProvider, useAuth } from "./auth";
+import { AuthProvider, useAuth, hasPermission, getRequiredPermission } from "./auth";
+import { AccessDenied } from "./components/shared";
 import { LoginScreen } from "./features/auth/LoginScreen";
 import { DashboardScreen } from "./features/dashboard/DashboardScreen";
 import {
@@ -31,7 +32,7 @@ export default function App() {
 }
 
 function AppShell() {
-  const { isAuthenticated, loading, logout } = useAuth();
+  const { isAuthenticated, loading, logout, currentUser } = useAuth();
   const [screen, setScreen] = useState<Screen>("dashboard");
   const [collapsed, setCollapsed] = useState(false);
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
@@ -59,10 +60,14 @@ function AppShell() {
   };
 
   const renderScreen = () => {
+    const required = getRequiredPermission(screen, { isEditing: !!selectedAssetId });
+    if (required && !hasPermission(currentUser, required)) {
+      return <AccessDenied onBack={() => setScreen("dashboard")} />;
+    }
     switch (screen) {
       case "dashboard":       return <DashboardScreen onNavigate={setScreen} />;
       case "assets":          return <AssetsScreen onOpenAsset={onOpenAsset} />;
-      case "asset-detail":    return <AssetDetailScreen onNavigate={setScreen} assetId={selectedAssetId} />;
+      case "asset-detail":    return <AssetDetailScreen onNavigate={setScreen} onOpenAsset={onOpenAsset} assetId={selectedAssetId} />;
       case "asset-report":    return <AssetReportScreen assetId={selectedAssetId} onNavigate={setScreen} />;
       case "add-asset":       return <AddAssetScreen onNavigate={setScreen} assetId={selectedAssetId} />;
       case "transfer":        return <TransferScreen onNavigate={setScreen} assetId={selectedAssetId} />;

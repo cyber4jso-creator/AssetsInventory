@@ -9,22 +9,27 @@ import {
 import type { NavigateFn, Screen } from "../../types";
 import { ASSETS, KPI_DATA, MONTHLY, DEPT_PIE } from "../../data/mock";
 import { Btn, Card, Chip } from "../../components/shared";
+import { useAuth, hasPermission, SCREEN_PERMISSIONS } from "../../auth";
 
 // ─────────────────────────────────────────────
 // Dashboard
 // ─────────────────────────────────────────────
 
 export function DashboardScreen({ onNavigate }: { onNavigate: NavigateFn }) {
+  const { currentUser } = useAuth();
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#2B2B2B]">مرحباً، محمد</h1>
+          <h1 className="text-2xl font-bold text-[#2B2B2B]">مرحباً، {currentUser?.name.split(" ")[0]}</h1>
           <p className="text-sm text-[#6B7280] mt-0.5">
             {new Date().toLocaleDateString("ar-SA", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
           </p>
         </div>
-        <Btn variant="primary" icon={<Plus size={15} />} onClick={() => onNavigate("add-asset")}>إضافة أصل</Btn>
+        {hasPermission(currentUser, "assets.create") && (
+          <Btn variant="primary" icon={<Plus size={15} />} onClick={() => onNavigate("add-asset")}>إضافة أصل</Btn>
+        )}
       </div>
 
       {/* KPIs */}
@@ -147,7 +152,12 @@ export function DashboardScreen({ onNavigate }: { onNavigate: NavigateFn }) {
           { label: "طلب صيانة",   icon: Clock,          screen: "requests"    as Screen },
           { label: "إنشاء QR",    icon: QrCode,         screen: "qr"          as Screen },
           { label: "التقارير",    icon: BarChart3,       screen: "reports"     as Screen },
-        ] as Array<{ label: string; icon: ElementType; screen: Screen }>).map(a => {
+        ] as Array<{ label: string; icon: ElementType; screen: Screen }>)
+          .filter(a => {
+            const perm = SCREEN_PERMISSIONS[a.screen];
+            return !perm || hasPermission(currentUser, perm);
+          })
+          .map(a => {
           const Icon = a.icon;
           return (
             <button key={a.label} onClick={() => onNavigate(a.screen)}

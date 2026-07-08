@@ -1,6 +1,7 @@
 import { Eye, Edit, QrCode, FileText, Inbox } from "lucide-react";
 import type { Asset, Screen } from "../../types";
 import { Chip, CriticalityChip, EmptyState } from "../../components/shared";
+import { useAuth, hasPermission } from "../../auth";
 import { WARRANTY_META, getWarrantyState } from "../../utils/warranty";
 
 // ─────────────────────────────────────────────
@@ -15,6 +16,10 @@ export function AssetsTable({ assets, selectedId, checkedIds, onSelect, onOpenAs
   onOpenAsset: (assetId: string, screen: Screen) => void;
   onToggleCheck: (assetId: string) => void;
 }) {
+  const { currentUser } = useAuth();
+  const canEdit = hasPermission(currentUser, "assets.edit");
+  const canQr   = hasPermission(currentUser, "assets.qr");
+
   if (assets.length === 0) {
     return (
       <EmptyState icon={Inbox} title="لا توجد نتائج تطابق معايير البحث"
@@ -86,14 +91,18 @@ export function AssetsTable({ assets, selectedId, checkedIds, onSelect, onOpenAs
                       className="p-1.5 text-[#6B7280] hover:text-[#2A3172] hover:bg-[#EEF0F8] rounded-md transition-colors" title="عرض">
                       <Eye size={14} />
                     </button>
-                    <button onClick={() => onOpenAsset(a.id, "add-asset")}
-                      className="p-1.5 text-[#6B7280] hover:text-[#2A3172] hover:bg-[#EEF0F8] rounded-md transition-colors" title="تعديل">
-                      <Edit size={14} />
-                    </button>
-                    <button onClick={() => onOpenAsset(a.id, "qr")}
-                      className="p-1.5 text-[#6B7280] hover:text-[#3D4589] hover:bg-[#EEF0F8] rounded-md transition-colors" title="رمز QR">
-                      <QrCode size={14} />
-                    </button>
+                    {canEdit && (
+                      <button onClick={() => onOpenAsset(a.id, "add-asset")}
+                        className="p-1.5 text-[#6B7280] hover:text-[#2A3172] hover:bg-[#EEF0F8] rounded-md transition-colors" title="تعديل">
+                        <Edit size={14} />
+                      </button>
+                    )}
+                    {canQr && (
+                      <button onClick={() => onOpenAsset(a.id, "qr")}
+                        className="p-1.5 text-[#6B7280] hover:text-[#3D4589] hover:bg-[#EEF0F8] rounded-md transition-colors" title="رمز QR">
+                        <QrCode size={14} />
+                      </button>
+                    )}
                     <button onClick={() => onOpenAsset(a.id, "asset-report")}
                       className="p-1.5 text-[#6B7280] hover:text-[#2A3172] hover:bg-[#EEF0F8] rounded-md transition-colors" title="عرض تقرير الأصل">
                       <FileText size={14} />

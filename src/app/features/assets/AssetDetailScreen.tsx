@@ -3,18 +3,24 @@ import {
   ChevronRight, QrCode, ArrowLeftRight, Edit, MapPin, Building2, User,
   Plus, Upload, Printer, Download, Cpu,
 } from "lucide-react";
-import type { NavigateFn } from "../../types";
+import type { NavigateFn, Screen } from "../../types";
 import { ASSETS, ASSET_HISTORY } from "../../data/mock";
 import { Btn, Card, Chip, CriticalityChip } from "../../components/shared";
+import { useAuth, hasPermission } from "../../auth";
 import { AssetHistoryTimeline } from "./AssetHistoryTimeline";
 
 // ─────────────────────────────────────────────
 // Asset Detail
 // ─────────────────────────────────────────────
 
-export function AssetDetailScreen({ onNavigate, assetId }: { onNavigate: NavigateFn; assetId?: string | null }) {
+export function AssetDetailScreen({ onNavigate, onOpenAsset, assetId }: {
+  onNavigate: NavigateFn;
+  onOpenAsset: (assetId: string | null, screen: Screen) => void;
+  assetId?: string | null;
+}) {
   const [tab, setTab] = useState("details");
   const asset = ASSETS.find(a => a.id === assetId) ?? ASSETS[0];
+  const { currentUser } = useAuth();
 
   return (
     <div className="space-y-5">
@@ -45,9 +51,15 @@ export function AssetDetailScreen({ onNavigate, assetId }: { onNavigate: Navigat
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <Btn variant="secondary" size="sm" icon={<QrCode size={13} />}       onClick={() => onNavigate("qr")}>QR</Btn>
-          <Btn variant="secondary" size="sm" icon={<ArrowLeftRight size={13} />} onClick={() => onNavigate("transfer")}>نقل</Btn>
-          <Btn variant="primary"   size="sm" icon={<Edit size={13} />}          onClick={() => onNavigate("add-asset")}>تعديل</Btn>
+          {hasPermission(currentUser, "assets.qr") && (
+            <Btn variant="secondary" size="sm" icon={<QrCode size={13} />} onClick={() => onOpenAsset(asset.id, "qr")}>QR</Btn>
+          )}
+          {hasPermission(currentUser, "assets.transfer") && (
+            <Btn variant="secondary" size="sm" icon={<ArrowLeftRight size={13} />} onClick={() => onOpenAsset(asset.id, "transfer")}>نقل</Btn>
+          )}
+          {hasPermission(currentUser, "assets.edit") && (
+            <Btn variant="primary" size="sm" icon={<Edit size={13} />} onClick={() => onOpenAsset(asset.id, "add-asset")}>تعديل</Btn>
+          )}
         </div>
       </Card>
 

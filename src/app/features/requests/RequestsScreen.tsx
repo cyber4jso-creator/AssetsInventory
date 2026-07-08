@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus, Eye } from "lucide-react";
 import { Btn, Card } from "../../components/shared";
+import { useAuth, hasPermission } from "../../auth";
 
 // ─────────────────────────────────────────────
 // Requests
@@ -8,6 +9,8 @@ import { Btn, Card } from "../../components/shared";
 
 export function RequestsScreen() {
   const [tab, setTab] = useState("transfer");
+  const { currentUser } = useAuth();
+  const canCreate = hasPermission(currentUser, "requests.create");
 
   const requests = [
     { id: "REQ-2024-0041", asset: "حاسوب Dell OptiPlex",   from: "تقنية المعلومات", to: "المالية",          date: "2024-06-14", status: "pending"   as const },
@@ -27,7 +30,7 @@ export function RequestsScreen() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[#2B2B2B]">الطلبات</h1>
-        <Btn variant="primary" icon={<Plus size={15} />}>طلب جديد</Btn>
+        {canCreate && <Btn variant="primary" icon={<Plus size={15} />}>طلب جديد</Btn>}
       </div>
 
       <div className="flex gap-1 bg-[#F7F6F3] p-1 rounded-xl w-fit">

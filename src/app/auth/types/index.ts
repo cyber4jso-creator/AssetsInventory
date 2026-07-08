@@ -11,13 +11,19 @@ export type Permission =
   | "assets.edit"
   | "assets.delete"
   | "assets.transfer"
+  | "assets.qr"
   | "reports.view"
   | "reports.export"
   | "users.manage"
   | "settings.manage"
+  | "settings.view"
+  | "requests.view"
   | "requests.create"
   | "requests.approve"
-  | "dashboard.view";
+  | "dashboard.view"
+  | "audit.view"
+  | "assistant.use"
+  | "notifications.view";
 
 export type UserStatus = "active" | "inactive";
 
