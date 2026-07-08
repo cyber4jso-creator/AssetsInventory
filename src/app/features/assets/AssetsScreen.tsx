@@ -12,6 +12,7 @@ import { AssetsFilterSidebar, EMPTY_FILTERS, matchesFilters } from "./AssetsFilt
 import type { AssetFilters } from "./AssetsFilterSidebar";
 import { AssetsTable } from "./AssetsTable";
 import { AssetDetailsPanel } from "./AssetDetailsPanel";
+import { ColumnVisibilityPopover } from "./ColumnVisibilityPopover";
 
 // ─────────────────────────────────────────────
 // Assets Management
@@ -143,6 +144,9 @@ export function AssetsScreen({ onOpenAsset }: {
           )}
 
           <Card p={false}>
+            <div className="px-4 pt-3 pb-1 flex items-center justify-end border-b border-[#E5E7EB]">
+              <ColumnVisibilityPopover />
+            </div>
             {loading ? (
               <div className="p-4 space-y-3">
                 {Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-12" />)}

@@ -22,6 +22,7 @@ import { NotificationsScreen, SettingsScreen } from "./features/settings";
 import { Sidebar } from "./components/layout/Sidebar";
 import { TopBar } from "./components/layout/TopBar";
 import { AppGlobalStyles } from "./components/layout/AppGlobalStyles";
+import { AssetFieldConfigProvider } from "./features/assets/contexts/AssetFieldConfigContext";
 
 export default function App() {
   return (
@@ -85,6 +86,7 @@ function AppShell() {
   };
 
   return (
+    <AssetFieldConfigProvider userId={currentUser!.id}>
     <div
       dir="rtl"
       className="flex h-screen overflow-hidden print:h-auto print:overflow-visible"
@@ -109,6 +111,7 @@ function AppShell() {
       </div>
       <AppGlobalStyles />
     </div>
+    </AssetFieldConfigProvider>
   );
 }
 
