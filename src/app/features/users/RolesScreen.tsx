@@ -22,29 +22,29 @@ export function RolesScreen() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[#3E3124]">الأدوار والصلاحيات</h1>
+        <h1 className="text-2xl font-bold text-[#2B2B2B]">الأدوار والصلاحيات</h1>
         <Btn variant="secondary" icon={<Plus size={14} />}>إضافة دور</Btn>
       </div>
       <Card p={false}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#F0EDE7] bg-[#FAFAF8]">
-                <th className="text-right text-xs text-[#8B7F72] font-medium px-5 py-3 min-w-36">الصلاحية</th>
+              <tr className="border-b border-[#E5E7EB] bg-[#FAFAF9]">
+                <th className="text-right text-xs text-[#6B7280] font-medium px-5 py-3 min-w-36">الصلاحية</th>
                 {roles.map(r => (
-                  <th key={r} className="text-center text-xs text-[#8B7F72] font-medium px-4 py-3 min-w-28">{r}</th>
+                  <th key={r} className="text-center text-xs text-[#6B7280] font-medium px-4 py-3 min-w-28">{r}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {perms.map((p, pi) => (
-                <tr key={p} className="border-b border-[#F7F5F0] hover:bg-[#FAFAF8] last:border-0">
-                  <td className="px-5 py-3.5 text-sm text-[#3E3124] font-medium">{p}</td>
+                <tr key={p} className="border-b border-[#F7F6F3] hover:bg-[#FAFAF9] last:border-0">
+                  <td className="px-5 py-3.5 text-sm text-[#2B2B2B] font-medium">{p}</td>
                   {roles.map((_, ri) => (
                     <td key={ri} className="px-4 py-3.5 text-center">
                       {matrix[ri][pi]
-                        ? <CheckCircle size={16} className="mx-auto text-[#5E8B4A]" />
-                        : <XCircle    size={16} className="mx-auto text-[#D8D3C8]" />
+                        ? <CheckCircle size={16} className="mx-auto text-[#4F7C5A]" />
+                        : <XCircle    size={16} className="mx-auto text-[#E5E7EB]" />
                       }
                     </td>
                   ))}

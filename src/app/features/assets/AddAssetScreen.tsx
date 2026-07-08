@@ -20,14 +20,14 @@ export function AddAssetScreen({ onNavigate, assetId }: { onNavigate: NavigateFn
 
   return (
     <div className="space-y-5 max-w-3xl">
-      <div className="flex items-center gap-2 text-sm text-[#8B7F72]">
-        <button onClick={() => onNavigate("assets")} className="hover:text-[#556B2F] transition-colors">قائمة الأصول</button>
+      <div className="flex items-center gap-2 text-sm text-[#6B7280]">
+        <button onClick={() => onNavigate("assets")} className="hover:text-[#2A3172] transition-colors">قائمة الأصول</button>
         <ChevronRight size={14} className="rotate-180" />
-        <span className="text-[#3E3124] font-medium">{asset ? "تعديل الأصل" : "إضافة أصل جديد"}</span>
+        <span className="text-[#2B2B2B] font-medium">{asset ? "تعديل الأصل" : "إضافة أصل جديد"}</span>
       </div>
       <div>
-        <h1 className="text-2xl font-bold text-[#3E3124]">{asset ? `تعديل: ${asset.name}` : "إضافة أصل جديد"}</h1>
-        <p className="text-sm text-[#8B7F72] mt-0.5">
+        <h1 className="text-2xl font-bold text-[#2B2B2B]">{asset ? `تعديل: ${asset.name}` : "إضافة أصل جديد"}</h1>
+        <p className="text-sm text-[#6B7280] mt-0.5">
           {asset ? `تحديث بيانات الأصل ${asset.id}` : "أدخل بيانات الأصل في الحقول أدناه"}
         </p>
       </div>
@@ -35,7 +35,7 @@ export function AddAssetScreen({ onNavigate, assetId }: { onNavigate: NavigateFn
       <div className="flex gap-2 flex-wrap">
         {steps.map(s => (
           <button key={s.id} onClick={() => setSection(s.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all ${section === s.id ? "bg-[#556B2F] text-white font-medium" : "bg-white border border-[#D8D3C8] text-[#8B7F72] hover:border-[#556B2F] hover:text-[#556B2F]"}`}>
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all ${section === s.id ? "bg-[#2A3172] text-white font-medium" : "bg-white border border-[#E5E7EB] text-[#6B7280] hover:border-[#2A3172] hover:text-[#2A3172]"}`}>
             <span className="font-mono text-xs opacity-60">{s.num}</span>
             {s.label}
           </button>
@@ -45,7 +45,7 @@ export function AddAssetScreen({ onNavigate, assetId }: { onNavigate: NavigateFn
       <Card>
         {section === "basic" && (
           <div>
-            <h3 className="text-sm font-semibold text-[#3E3124] mb-5">البيانات الأساسية للأصل</h3>
+            <h3 className="text-sm font-semibold text-[#2B2B2B] mb-5">البيانات الأساسية للأصل</h3>
             <div className="grid grid-cols-2 gap-5">
               <div className="col-span-2"><Inp label="اسم الأصل" placeholder="مثال: حاسوب مكتبي Dell OptiPlex" required /></div>
               <Inp label="الرقم التسلسلي"  placeholder="SN-XXXX-0000" />
@@ -60,7 +60,7 @@ export function AddAssetScreen({ onNavigate, assetId }: { onNavigate: NavigateFn
 
         {section === "location" && (
           <div>
-            <h3 className="text-sm font-semibold text-[#3E3124] mb-5">الموقع والتعيين</h3>
+            <h3 className="text-sm font-semibold text-[#2B2B2B] mb-5">الموقع والتعيين</h3>
             <div className="grid grid-cols-2 gap-5">
               <Sel label="القسم المسؤول" required options={["تقنية المعلومات","المالية","الإدارة","الإدارة العليا","الموارد البشرية","الخدمات اللوجستية","السجلات والأرشيف"]} placeholder="اختر القسم" />
               <Sel label="المبنى"        required options={["مبنى أ","مبنى ب","مبنى ج","مبنى د","خارج الموقع"]} placeholder="اختر المبنى" />
@@ -72,7 +72,7 @@ export function AddAssetScreen({ onNavigate, assetId }: { onNavigate: NavigateFn
 
         {section === "financial" && (
           <div>
-            <h3 className="text-sm font-semibold text-[#3E3124] mb-5">البيانات المالية</h3>
+            <h3 className="text-sm font-semibold text-[#2B2B2B] mb-5">البيانات المالية</h3>
             <div className="grid grid-cols-2 gap-5">
               <Inp label="تاريخ الشراء"               type="date" required />
               <Inp label="قيمة الشراء (ريال سعودي)"  type="number" placeholder="0.00" required />
@@ -86,18 +86,18 @@ export function AddAssetScreen({ onNavigate, assetId }: { onNavigate: NavigateFn
 
         {section === "notes" && (
           <div className="space-y-5">
-            <h3 className="text-sm font-semibold text-[#3E3124]">ملاحظات ومرفقات</h3>
+            <h3 className="text-sm font-semibold text-[#2B2B2B]">ملاحظات ومرفقات</h3>
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-[#3E3124]">ملاحظات إضافية</label>
+              <label className="text-sm font-medium text-[#2B2B2B]">ملاحظات إضافية</label>
               <textarea rows={4} placeholder="أضف أي ملاحظات أو معلومات إضافية حول هذا الأصل..."
-                className="w-full px-3.5 py-2.5 rounded-lg border border-[#D8D3C8] bg-white text-[#3E3124] text-sm
-                  placeholder:text-[#A09580] focus:outline-none focus:ring-2 focus:ring-[#556B2F]/25 focus:border-[#556B2F] resize-none transition-all" />
+                className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E7EB] bg-white text-[#2B2B2B] text-sm
+                  placeholder:text-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#D0A165]/30 focus:border-[#D0A165] resize-none transition-all" />
             </div>
-            <div className="border-2 border-dashed border-[#D8D3C8] rounded-xl p-8 text-center
-              hover:border-[#556B2F] hover:bg-[#F7F4EE] transition-all cursor-pointer">
-              <Upload size={22} className="mx-auto text-[#C4B9A8] mb-2" />
-              <p className="text-sm text-[#8B7F72]">رفع المستندات المرفقة (فاتورة، ضمان، صور)</p>
-              <p className="text-xs text-[#A09580] mt-1">PDF, DOCX, JPG — الحجم الأقصى 20MB لكل ملف</p>
+            <div className="border-2 border-dashed border-[#E5E7EB] rounded-xl p-8 text-center
+              hover:border-[#2A3172] hover:bg-[#F7F6F3] transition-all cursor-pointer">
+              <Upload size={22} className="mx-auto text-[#9CA3AF] mb-2" />
+              <p className="text-sm text-[#6B7280]">رفع المستندات المرفقة (فاتورة، ضمان، صور)</p>
+              <p className="text-xs text-[#6B7280] mt-1">PDF, DOCX, JPG — الحجم الأقصى 20MB لكل ملف</p>
             </div>
           </div>
         )}

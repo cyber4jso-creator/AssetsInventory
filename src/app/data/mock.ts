@@ -6,18 +6,18 @@ import type { LucideIcon } from "lucide-react";
 import type { Asset, AssetStatus, BusinessCriticality, AssetHistoryEvent, AssetHistoryEventType } from "../types";
 
 export const STATUS: Record<AssetStatus, { label: string; bg: string; text: string; dot: string }> = {
-  active:      { label: "نشط",         bg: "#EBF4E8", text: "#2E5E23", dot: "#5E8B4A" },
-  maintenance: { label: "في الصيانة", bg: "#FDF4DC", text: "#7A5A15", dot: "#C79A32" },
-  reserved:    { label: "محجوز",       bg: "#E8F0F8", text: "#2E4F6A", dot: "#5B7C99" },
-  inactive:    { label: "معطل",        bg: "#FAEAEA", text: "#7A2E2E", dot: "#B04A4A" },
-  transferred: { label: "مُحال",       bg: "#EEF1E8", text: "#3E5228", dot: "#6B7D45" },
+  active:      { label: "نشط",         bg: "#EDF3EF", text: "#3D6B47", dot: "#4F7C5A" },
+  maintenance: { label: "في الصيانة", bg: "#FDF6ED", text: "#8B6914", dot: "#D0A165" },
+  reserved:    { label: "محجوز",       bg: "#EEF0F8", text: "#2A3172", dot: "#3D4589" },
+  inactive:    { label: "معطل",        bg: "#FAEDED", text: "#9E3A3A", dot: "#C44D4D" },
+  transferred: { label: "مُحال",       bg: "#F0EFE9", text: "#4B5563", dot: "#6B7280" },
 };
 
 export const CRITICALITY: Record<BusinessCriticality, { label: string; bg: string; text: string; dot: string }> = {
-  Critical: { label: "Critical", bg: "#FAEAEA", text: "#7A2E2E", dot: "#B04A4A" },
-  High:     { label: "High",     bg: "#FDF0E8", text: "#9A4E12", dot: "#E07A2F" },
-  Medium:   { label: "Medium",   bg: "#FDF4DC", text: "#7A5A15", dot: "#C79A32" },
-  Low:      { label: "Low",      bg: "#EBF4E8", text: "#2E5E23", dot: "#5E8B4A" },
+  Critical: { label: "Critical", bg: "#FAEDED", text: "#9E3A3A", dot: "#C44D4D" },
+  High:     { label: "High",     bg: "#FDF6ED", text: "#8B6914", dot: "#D0A165" },
+  Medium:   { label: "Medium",   bg: "#FDF6ED", text: "#8B6914", dot: "#D0A165" },
+  Low:      { label: "Low",      bg: "#EDF3EF", text: "#3D6B47", dot: "#4F7C5A" },
 };
 
 export const BUSINESS_CRITICALITY_OPTIONS: BusinessCriticality[] = ["Critical", "High", "Medium", "Low"];
@@ -46,7 +46,7 @@ export const HISTORY_EVENT_META: Record<AssetHistoryEventType, {
   getFields: (e: AssetHistoryEvent) => { label: string; value?: string }[];
 }> = {
   created: {
-    label: "إنشاء الأصل", icon: Plus, bg: "#EBF4E8", text: "#2E5E23",
+    label: "إنشاء الأصل", icon: Plus, bg: "#EDF3EF", text: "#3D6B47",
     getFields: e => [
       { label: "بواسطة", value: e.performedBy },
       { label: "القسم",  value: e.department },
@@ -55,7 +55,7 @@ export const HISTORY_EVENT_META: Record<AssetHistoryEventType, {
     ],
   },
   assigned: {
-    label: "إسناد", icon: User, bg: "#E8F0F8", text: "#2E4F6A",
+    label: "إسناد", icon: User, bg: "#EEF0F8", text: "#2A3172",
     getFields: e => [
       { label: "بواسطة", value: e.performedBy },
       { label: "من",     value: e.from },
@@ -65,7 +65,7 @@ export const HISTORY_EVENT_META: Record<AssetHistoryEventType, {
     ],
   },
   transferred: {
-    label: "نقل", icon: ArrowLeftRight, bg: "#EEF1E8", text: "#3E5228",
+    label: "نقل", icon: ArrowLeftRight, bg: "#F0EFE9", text: "#4B5563",
     getFields: e => [
       { label: "المسؤول السابق",  value: e.from },
       { label: "المسؤول الحالي",  value: e.to },
@@ -77,7 +77,7 @@ export const HISTORY_EVENT_META: Record<AssetHistoryEventType, {
     ],
   },
   maintenance: {
-    label: "صيانة", icon: Wrench, bg: "#FDF4DC", text: "#7A5A15",
+    label: "صيانة", icon: Wrench, bg: "#FDF6ED", text: "#8B6914",
     getFields: e => [
       { label: "بواسطة", value: e.performedBy },
       { label: "القسم",  value: e.department },
@@ -87,14 +87,14 @@ export const HISTORY_EVENT_META: Record<AssetHistoryEventType, {
     ],
   },
   warranty: {
-    label: "تحديث الضمان", icon: Shield, bg: "#FDF0E8", text: "#9A4E12",
+    label: "تحديث الضمان", icon: Shield, bg: "#FDF6ED", text: "#8B6914",
     getFields: e => [
       { label: "بواسطة", value: e.performedBy },
       { label: "السبب",  value: e.reason },
     ],
   },
   "status-changed": {
-    label: "تغيير الحالة", icon: Tag, bg: "#F5F0E6", text: "#8B6F47",
+    label: "تغيير الحالة", icon: Tag, bg: "#F0EFE9", text: "#6B7280",
     getFields: e => [
       { label: "بواسطة", value: e.performedBy },
       { label: "من",     value: e.from },
@@ -103,7 +103,7 @@ export const HISTORY_EVENT_META: Record<AssetHistoryEventType, {
     ],
   },
   disposed: {
-    label: "إخراج من الخدمة", icon: Archive, bg: "#FAEAEA", text: "#7A2E2E",
+    label: "إخراج من الخدمة", icon: Archive, bg: "#FAEDED", text: "#9E3A3A",
     getFields: e => [
       { label: "بواسطة", value: e.performedBy },
       { label: "الموقع", value: e.location },
@@ -161,10 +161,10 @@ export const ASSET_HISTORY: AssetHistoryEvent[] = [
 ];
 
 export const KPI_DATA = [
-  { label: "إجمالي الأصول",   value: "2,847", change: "+12%", up: true,  icon: Package,        color: "#556B2F", bg: "#EEF1E8" },
-  { label: "الأصول النشطة",   value: "2,391", change: "+8%",  up: true,  icon: CheckCircle,    color: "#5E8B4A", bg: "#EBF4E8" },
-  { label: "قيد الصيانة",     value: "183",   change: "-3%",  up: false, icon: Clock,          color: "#C79A32", bg: "#FDF4DC" },
-  { label: "نقل هذا الشهر",   value: "64",    change: "+21%", up: true,  icon: ArrowLeftRight, color: "#5B7C99", bg: "#E8F0F8" },
+  { label: "إجمالي الأصول",   value: "2,847", change: "+12%", up: true,  icon: Package,        color: "#2A3172", bg: "#EEF0F8" },
+  { label: "الأصول النشطة",   value: "2,391", change: "+8%",  up: true,  icon: CheckCircle,    color: "#4F7C5A", bg: "#EDF3EF" },
+  { label: "قيد الصيانة",     value: "183",   change: "-3%",  up: false, icon: Clock,          color: "#D0A165", bg: "#FDF6ED" },
+  { label: "نقل هذا الشهر",   value: "64",    change: "+21%", up: true,  icon: ArrowLeftRight, color: "#3D4589", bg: "#EEF0F8" },
 ];
 
 export const MONTHLY = [
@@ -177,12 +177,12 @@ export const MONTHLY = [
 ];
 
 export const DEPT_PIE = [
-  { name: "تقنية المعلومات", value: 485, color: "#556B2F" },
-  { name: "الإدارة",          value: 312, color: "#6B7D45" },
-  { name: "المالية",          value: 278, color: "#8B6F47" },
-  { name: "الموارد البشرية",  value: 195, color: "#D6C5A4" },
-  { name: "الخدمات",          value: 241, color: "#5B7C99" },
-  { name: "أخرى",             value: 336, color: "#C79A32" },
+  { name: "تقنية المعلومات", value: 485, color: "#2A3172" },
+  { name: "الإدارة",          value: 312, color: "#3D4589" },
+  { name: "المالية",          value: 278, color: "#D0A165" },
+  { name: "الموارد البشرية",  value: 195, color: "#4F7C5A" },
+  { name: "الخدمات",          value: 241, color: "#6B7280" },
+  { name: "أخرى",             value: 336, color: "#9CA3AF" },
 ];
 
 export const USERS = [

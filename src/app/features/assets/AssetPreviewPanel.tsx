@@ -45,11 +45,11 @@ export function AssetPreviewPanel({ asset, onOpenAsset }: {
   return (
     <Card className="sticky top-0 space-y-5">
       <div className="text-center">
-        <div className="w-14 h-14 rounded-2xl bg-[#EEF1E8] flex items-center justify-center mx-auto mb-3">
-          <Cpu size={26} className="text-[#556B2F]" />
+        <div className="w-14 h-14 rounded-2xl bg-[#EEF0F8] flex items-center justify-center mx-auto mb-3">
+          <Cpu size={26} className="text-[#2A3172]" />
         </div>
-        <h3 className="text-base font-bold text-[#3E3124] leading-snug">{asset.name}</h3>
-        <p className="text-xs font-mono text-[#8B7F72] mt-0.5">{asset.id}</p>
+        <h3 className="text-base font-bold text-[#2B2B2B] leading-snug">{asset.name}</h3>
+        <p className="text-xs font-mono text-[#6B7280] mt-0.5">{asset.id}</p>
         <div className="flex items-center justify-center gap-2 flex-wrap mt-3">
           <Chip status={asset.status} />
           <CriticalityChip criticality={asset.businessCriticality} />
@@ -61,21 +61,21 @@ export function AssetPreviewPanel({ asset, onOpenAsset }: {
         </div>
       </div>
 
-      <div className="space-y-3 pt-4 border-t border-[#F0EDE7]">
+      <div className="space-y-3 pt-4 border-t border-[#E5E7EB]">
         {fields.map(f => (
           <div key={f.label} className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-lg bg-[#F7F5F0] flex items-center justify-center flex-shrink-0">
-              <f.icon size={13} className="text-[#8B7F72]" />
+            <div className="w-7 h-7 rounded-lg bg-[#F7F6F3] flex items-center justify-center flex-shrink-0">
+              <f.icon size={13} className="text-[#6B7280]" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] text-[#A09580]">{f.label}</p>
-              <p className="text-xs font-medium text-[#3E3124] truncate">{f.value}</p>
+              <p className="text-[10px] text-[#6B7280]">{f.label}</p>
+              <p className="text-xs font-medium text-[#2B2B2B] truncate">{f.value}</p>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="space-y-1.5 pt-4 border-t border-[#F0EDE7]">
+      <div className="space-y-1.5 pt-4 border-t border-[#E5E7EB]">
         {QUICK_ACTIONS.map(a => (
           <Btn key={a.label} variant="secondary" size="sm" icon={<a.icon size={13} />}
             className="w-full justify-start" onClick={() => onOpenAsset(asset.id, a.screen)}>

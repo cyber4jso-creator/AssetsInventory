@@ -7,9 +7,9 @@ export function AppGlobalStyles() {
         }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #D6C5A4; border-radius: 2px; }
-        ::-webkit-scrollbar-thumb:hover { background: #C4B9A8; }
-        select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238B7F72' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: left 10px center; padding-left: 28px !important; }
+        ::-webkit-scrollbar-thumb { background: #D0A165; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #B8894E; }
+        select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236B7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: left 10px center; padding-left: 28px !important; }
         @media print {
           body { background: #fff !important; }
           * { box-shadow: none !important; }

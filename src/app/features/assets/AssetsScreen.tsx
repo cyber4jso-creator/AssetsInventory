@@ -63,11 +63,11 @@ export function AssetsScreen({ onOpenAsset }: {
   const pct = (n: number) => `${Math.round((n / totalAssets) * 100)}% من الإجمالي`;
 
   const stats = [
-    { label: "إجمالي الأصول",         value: String(totalAssets),   subtext: `عبر ${departmentCount} أقسام`, icon: Package,       iconBg: "#EEF1E8", iconColor: "#556B2F" },
-    { label: "الأصول الحرجة",          value: String(criticalCount), subtext: pct(criticalCount),            icon: AlertTriangle, iconBg: "#FAEAEA", iconColor: "#B04A4A" },
-    { label: "الأصول المسندة",         value: String(assignedCount), subtext: pct(assignedCount),            icon: UserCheck,     iconBg: "#E8F0F8", iconColor: "#2E4F6A" },
-    { label: "ضمان قارب على الانتهاء", value: String(expiringCount), subtext: "خلال 60 يوماً",                icon: ShieldAlert,   iconBg: "#FDF4DC", iconColor: "#7A5A15" },
-    { label: "الأصول المتاحة",         value: String(availableCount),subtext: pct(availableCount),           icon: PackageCheck,  iconBg: "#EBF4E8", iconColor: "#2E5E23" },
+    { label: "إجمالي الأصول",         value: String(totalAssets),   subtext: `عبر ${departmentCount} أقسام`, icon: Package,       iconBg: "#EEF0F8", iconColor: "#2A3172" },
+    { label: "الأصول الحرجة",          value: String(criticalCount), subtext: pct(criticalCount),            icon: AlertTriangle, iconBg: "#FAEDED", iconColor: "#C44D4D" },
+    { label: "الأصول المسندة",         value: String(assignedCount), subtext: pct(assignedCount),            icon: UserCheck,     iconBg: "#EEF0F8", iconColor: "#2A3172" },
+    { label: "ضمان قارب على الانتهاء", value: String(expiringCount), subtext: "خلال 60 يوماً",                icon: ShieldAlert,   iconBg: "#FDF6ED", iconColor: "#8B6914" },
+    { label: "الأصول المتاحة",         value: String(availableCount),subtext: pct(availableCount),           icon: PackageCheck,  iconBg: "#EDF3EF", iconColor: "#3D6B47" },
   ];
 
   return (
@@ -75,8 +75,8 @@ export function AssetsScreen({ onOpenAsset }: {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[#3E3124]">إدارة الأصول</h1>
-          <p className="text-sm text-[#8B7F72] mt-0.5">إدارة ومراقبة أصول المؤسسة بكفاءة</p>
+          <h1 className="text-2xl font-bold text-[#2B2B2B]">إدارة الأصول</h1>
+          <p className="text-sm text-[#6B7280] mt-0.5">إدارة ومراقبة أصول المؤسسة بكفاءة</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Btn variant="secondary" size="sm" icon={<SlidersHorizontal size={13} />} className="xl:hidden"
@@ -107,20 +107,20 @@ export function AssetsScreen({ onOpenAsset }: {
         {/* Center */}
         <div className="space-y-4 min-w-0">
           <div className="relative">
-            <Search size={16} className="absolute top-1/2 -translate-y-1/2 right-4 text-[#A09580]" />
+            <Search size={16} className="absolute top-1/2 -translate-y-1/2 right-4 text-[#6B7280]" />
             <input placeholder="ابحث باسم الأصل، الرقم، المسؤول، الرقم التسلسلي..." value={search}
               onChange={e => updateSearch(e.target.value)}
-              className="w-full pr-11 pl-4 py-3 text-sm rounded-xl border border-[#D8D3C8] bg-white
-                placeholder:text-[#A09580] focus:outline-none focus:ring-2 focus:ring-[#556B2F]/25 focus:border-[#556B2F]" />
+              className="w-full pr-11 pl-4 py-3 text-sm rounded-xl border border-[#E5E7EB] bg-white
+                placeholder:text-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#D0A165]/30 focus:border-[#D0A165]" />
           </div>
 
           {checkedIds.size > 0 && (
-            <div className="flex items-center gap-3 px-4 py-2.5 bg-[#EEF1E8] border border-[#C9D6B8] rounded-xl">
-              <ListChecks size={15} className="text-[#556B2F] flex-shrink-0" />
-              <span className="text-sm font-medium text-[#3E5228]">{checkedIds.size} محدد</span>
+            <div className="flex items-center gap-3 px-4 py-2.5 bg-[#EEF0F8] border border-[#D5DCE8] rounded-xl">
+              <ListChecks size={15} className="text-[#2A3172] flex-shrink-0" />
+              <span className="text-sm font-medium text-[#2A3172]">{checkedIds.size} محدد</span>
               <Btn variant="ghost" size="sm">تصدير المحدد</Btn>
               <button onClick={() => setCheckedIds(new Set())}
-                className="mr-auto flex items-center gap-1 text-xs text-[#556B2F] hover:text-[#3E5228] transition-colors cursor-pointer">
+                className="mr-auto flex items-center gap-1 text-xs text-[#2A3172] hover:text-[#222966] transition-colors cursor-pointer">
                 <X size={12} /> إلغاء التحديد
               </button>
             </div>
@@ -137,14 +137,14 @@ export function AssetsScreen({ onOpenAsset }: {
                   onSelect={setSelectedAssetId} onOpenAsset={onOpenAsset} onToggleCheck={toggleChecked} />
 
                 {totalPages > 1 && (
-                  <div className="p-4 border-t border-[#F0EDE7] flex items-center justify-between">
-                    <span className="text-xs text-[#8B7F72]">
+                  <div className="p-4 border-t border-[#E5E7EB] flex items-center justify-between">
+                    <span className="text-xs text-[#6B7280]">
                       عرض {filtered.length === 0 ? 0 : (page - 1) * perPage + 1}–{Math.min(page * perPage, filtered.length)} من {filtered.length}
                     </span>
                     <div className="flex items-center gap-1">
                       {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
                         <button key={p} onClick={() => setPage(p)}
-                          className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors cursor-pointer ${p === page ? "bg-[#556B2F] text-white" : "text-[#8B7F72] hover:bg-[#F0EDE7]"}`}>
+                          className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors cursor-pointer ${p === page ? "bg-[#2A3172] text-white" : "text-[#6B7280] hover:bg-[#F0EFE9]"}`}>
                           {p}
                         </button>
                       ))}

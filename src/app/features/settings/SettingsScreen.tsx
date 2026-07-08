@@ -14,7 +14,7 @@ export function SettingsScreen() {
   const Toggle = ({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) => (
     <button onClick={() => onChange(!value)}
       className="w-11 h-6 rounded-full transition-colors relative cursor-pointer flex-shrink-0"
-      style={{ background: value ? "#556B2F" : "#D8D3C8" }}>
+      style={{ background: value ? "#2A3172" : "#E5E7EB" }}>
       <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-200
         ${value ? "right-1" : "right-6"}`} />
     </button>
@@ -27,7 +27,7 @@ export function SettingsScreen() {
         {
           label: "لغة الواجهة", desc: "اختر اللغة المفضلة لعرض النظام",
           control: (
-            <select className="text-sm px-3 py-1.5 rounded-lg border border-[#D8D3C8] bg-white focus:outline-none appearance-none cursor-pointer">
+            <select className="text-sm px-3 py-1.5 rounded-lg border border-[#E5E7EB] bg-white focus:outline-none appearance-none cursor-pointer">
               <option value="ar">العربية</option>
               <option value="en">English</option>
             </select>
@@ -36,7 +36,7 @@ export function SettingsScreen() {
         {
           label: "المنطقة الزمنية", desc: "التوقيت الرسمي للمملكة العربية السعودية",
           control: (
-            <select className="text-sm px-3 py-1.5 rounded-lg border border-[#D8D3C8] bg-white focus:outline-none appearance-none cursor-pointer">
+            <select className="text-sm px-3 py-1.5 rounded-lg border border-[#E5E7EB] bg-white focus:outline-none appearance-none cursor-pointer">
               <option>GMT+3 — الرياض</option>
             </select>
           ),
@@ -58,7 +58,7 @@ export function SettingsScreen() {
           label: "مهلة انتهاء الجلسة", desc: "تسجيل الخروج تلقائياً بعد فترة عدم النشاط",
           control: (
             <select value={sessionTTL} onChange={e => setSession(e.target.value)}
-              className="text-sm px-3 py-1.5 rounded-lg border border-[#D8D3C8] bg-white focus:outline-none appearance-none cursor-pointer">
+              className="text-sm px-3 py-1.5 rounded-lg border border-[#E5E7EB] bg-white focus:outline-none appearance-none cursor-pointer">
               <option value="15">15 دقيقة</option>
               <option value="30">30 دقيقة</option>
               <option value="60">60 دقيقة</option>
@@ -72,16 +72,16 @@ export function SettingsScreen() {
 
   return (
     <div className="space-y-5 max-w-2xl">
-      <h1 className="text-2xl font-bold text-[#3E3124]">الإعدادات</h1>
+      <h1 className="text-2xl font-bold text-[#2B2B2B]">الإعدادات</h1>
       {sections.map(sec => (
         <Card key={sec.title}>
-          <h3 className="text-sm font-semibold text-[#3E3124] mb-4 pb-3 border-b border-[#F0EDE7]">{sec.title}</h3>
+          <h3 className="text-sm font-semibold text-[#2B2B2B] mb-4 pb-3 border-b border-[#E5E7EB]">{sec.title}</h3>
           <div className="space-y-4">
             {sec.items.map(item => (
               <div key={item.label} className="flex items-center justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[#3E3124]">{item.label}</p>
-                  <p className="text-xs text-[#8B7F72] mt-0.5">{item.desc}</p>
+                  <p className="text-sm font-medium text-[#2B2B2B]">{item.label}</p>
+                  <p className="text-xs text-[#6B7280] mt-0.5">{item.desc}</p>
                 </div>
                 {item.control}
               </div>

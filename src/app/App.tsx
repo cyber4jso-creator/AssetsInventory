@@ -40,8 +40,8 @@ function AppShell() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#F2F1F1" }}>
-        <div className="w-8 h-8 border-2 border-[#556B2F] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#F7F6F3" }}>
+        <div className="w-8 h-8 border-2 border-[#2A3172] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -83,7 +83,7 @@ function AppShell() {
     <div
       dir="rtl"
       className="flex h-screen overflow-hidden print:h-auto print:overflow-visible"
-      style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif", background: "#F2F1F1" }}
+      style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif", background: "#F7F6F3" }}
     >
       <Sidebar
         screen={screen}
@@ -98,7 +98,7 @@ function AppShell() {
           unread={unreadCount}
           onNotifications={() => setScreen("notifications")}
         />
-        <main className="flex-1 overflow-y-auto p-6 print:overflow-visible print:p-0 print:h-auto" style={{ background: "#F2F1F1" }}>
+        <main className="flex-1 overflow-y-auto p-6 print:overflow-visible print:p-0 print:h-auto" style={{ background: "#F7F6F3" }}>
           {renderScreen()}
         </main>
       </div>

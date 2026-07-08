@@ -28,15 +28,15 @@ export function AIAssistantScreen() {
   return (
     <div className="flex flex-col max-w-2xl" style={{ height: "calc(100vh - 136px)" }}>
       <div className="flex items-center gap-3 mb-5 flex-shrink-0">
-        <div className="w-10 h-10 rounded-xl bg-[#3E3124] flex items-center justify-center flex-shrink-0">
-          <Bot size={18} className="text-[#D6C5A4]" />
+        <div className="w-10 h-10 rounded-xl bg-[#2B2B2B] flex items-center justify-center flex-shrink-0">
+          <Bot size={18} className="text-[#D0A165]" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-[#3E3124]">المساعد الذكي</h1>
-          <p className="text-xs text-[#8B7F72]">مدعوم بالذكاء الاصطناعي — يعمل على بيانات النظام الحي</p>
+          <h1 className="text-xl font-bold text-[#2B2B2B]">المساعد الذكي</h1>
+          <p className="text-xs text-[#6B7280]">مدعوم بالذكاء الاصطناعي — يعمل على بيانات النظام الحي</p>
         </div>
-        <span className="flex items-center gap-1.5 text-xs text-[#C79A32] bg-[#FDF4DC] px-2.5 py-1 rounded-full mr-auto">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#C79A32]" />
+        <span className="flex items-center gap-1.5 text-xs text-[#D0A165] bg-[#FDF6ED] px-2.5 py-1 rounded-full mr-auto">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#D0A165]" />
           وضع التجريب
         </span>
       </div>
@@ -45,8 +45,8 @@ export function AIAssistantScreen() {
         <div className="grid grid-cols-2 gap-2 mb-4 flex-shrink-0">
           {AI_SUGGESTIONS.map(s => (
             <button key={s} onClick={() => send(s)}
-              className="text-right px-4 py-3 bg-white border border-[#D8D3C8] rounded-xl text-sm text-[#3E3124]
-                hover:border-[#556B2F] hover:bg-[#EEF1E8] transition-all leading-snug">
+              className="text-right px-4 py-3 bg-white border border-[#E5E7EB] rounded-xl text-sm text-[#2B2B2B]
+                hover:border-[#2A3172] hover:bg-[#EEF0F8] transition-all leading-snug">
               {s}
             </button>
           ))}
@@ -57,16 +57,16 @@ export function AIAssistantScreen() {
         {messages.map((m, i) => (
           <div key={i} className={`flex gap-3 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5
-              ${m.role === "assistant" ? "bg-[#3E3124]" : "bg-[#EEF1E8]"}`}>
+              ${m.role === "assistant" ? "bg-[#2B2B2B]" : "bg-[#EEF0F8]"}`}>
               {m.role === "assistant"
-                ? <Bot  size={14} className="text-[#D6C5A4]" />
-                : <User size={14} className="text-[#556B2F]" />
+                ? <Bot  size={14} className="text-[#D0A165]" />
+                : <User size={14} className="text-[#2A3172]" />
               }
             </div>
             <div className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed
               ${m.role === "assistant"
-                ? "bg-white border border-[#D8D3C8] text-[#3E3124] rounded-tr-sm"
-                : "bg-[#556B2F] text-[#F7F4EE] rounded-tl-sm"
+                ? "bg-white border border-[#E5E7EB] text-[#2B2B2B] rounded-tr-sm"
+                : "bg-[#2A3172] text-[#FFFFFF] rounded-tl-sm"
               }`}>
               {m.content}
             </div>
@@ -74,12 +74,12 @@ export function AIAssistantScreen() {
         ))}
         {loading && (
           <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#3E3124] flex items-center justify-center flex-shrink-0 mt-0.5">
-              <Bot size={14} className="text-[#D6C5A4]" />
+            <div className="w-8 h-8 rounded-full bg-[#2B2B2B] flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Bot size={14} className="text-[#D0A165]" />
             </div>
-            <div className="bg-white border border-[#D8D3C8] px-4 py-3.5 rounded-2xl rounded-tr-sm flex items-center gap-1.5">
+            <div className="bg-white border border-[#E5E7EB] px-4 py-3.5 rounded-2xl rounded-tr-sm flex items-center gap-1.5">
               {[0, 200, 400].map(delay => (
-                <span key={delay} className="w-1.5 h-1.5 rounded-full bg-[#C4B9A8]"
+                <span key={delay} className="w-1.5 h-1.5 rounded-full bg-[#9CA3AF]"
                   style={{ animation: `bounce 1s ${delay}ms infinite` }} />
               ))}
             </div>
@@ -87,14 +87,14 @@ export function AIAssistantScreen() {
         )}
       </div>
 
-      <div className="flex items-center gap-2 bg-white border border-[#D8D3C8] rounded-xl p-2 shadow-sm flex-shrink-0">
+      <div className="flex items-center gap-2 bg-white border border-[#E5E7EB] rounded-xl p-2 shadow-sm flex-shrink-0">
         <input value={input} onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === "Enter" && send(input)}
           placeholder="اكتب سؤالك هنا..."
-          className="flex-1 px-3 py-2 text-sm text-[#3E3124] placeholder:text-[#A09580] bg-transparent focus:outline-none" />
+          className="flex-1 px-3 py-2 text-sm text-[#2B2B2B] placeholder:text-[#6B7280] bg-transparent focus:outline-none" />
         <button onClick={() => send(input)} disabled={!input.trim() || loading}
-          className="w-9 h-9 rounded-lg bg-[#556B2F] flex items-center justify-center text-white
-            hover:bg-[#4A5E28] transition-colors disabled:opacity-40 cursor-pointer flex-shrink-0">
+          className="w-9 h-9 rounded-lg bg-[#2A3172] flex items-center justify-center text-white
+            hover:bg-[#B8894E] transition-colors disabled:opacity-40 cursor-pointer flex-shrink-0">
           <Send size={14} />
         </button>
       </div>

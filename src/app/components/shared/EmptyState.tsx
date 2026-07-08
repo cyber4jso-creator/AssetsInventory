@@ -7,11 +7,11 @@ export function EmptyState({ icon: Icon, title, subtitle }: {
 }) {
   return (
     <div className="flex flex-col items-center justify-center text-center py-14">
-      <div className="w-14 h-14 rounded-full bg-[#F7F5F0] flex items-center justify-center mb-3">
-        <Icon size={22} className="text-[#C4B9A8]" />
+      <div className="w-14 h-14 rounded-full bg-[#F7F6F3] flex items-center justify-center mb-3">
+        <Icon size={22} className="text-[#9CA3AF]" />
       </div>
-      <p className="text-sm font-medium text-[#3E3124]">{title}</p>
-      {subtitle && <p className="text-xs text-[#A09580] mt-1">{subtitle}</p>}
+      <p className="text-sm font-medium text-[#2B2B2B]">{title}</p>
+      {subtitle && <p className="text-xs text-[#6B7280] mt-1">{subtitle}</p>}
     </div>
   );
 }

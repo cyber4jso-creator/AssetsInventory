@@ -28,9 +28,9 @@ export function AssetsTable({ assets, selectedId, checkedIds, onSelect, onOpenAs
     <div className="overflow-x-auto">
       <table className="w-full text-sm min-w-[1040px]">
         <thead>
-          <tr className="border-b border-[#F0EDE7] bg-[#FAFAF8]">
+          <tr className="border-b border-[#E5E7EB] bg-[#FAFAF9]">
             {COLUMNS.map((h, i) => (
-              <th key={i} className="text-right text-xs text-[#8B7F72] font-medium px-4 py-3">{h}</th>
+              <th key={i} className="text-right text-xs text-[#6B7280] font-medium px-4 py-3">{h}</th>
             ))}
           </tr>
         </thead>
@@ -42,21 +42,21 @@ export function AssetsTable({ assets, selectedId, checkedIds, onSelect, onOpenAs
               <tr key={a.id}
                 onClick={() => onSelect(a.id)}
                 onDoubleClick={() => onOpenAsset(a.id, "asset-detail")}
-                className={`cursor-pointer transition-colors ${i < assets.length - 1 ? "border-b border-[#F7F5F0]" : ""} ${
-                  selected ? "bg-[#EEF1E8]" : "hover:bg-[#FAFAF8]"
+                className={`cursor-pointer transition-colors ${i < assets.length - 1 ? "border-b border-[#F7F6F3]" : ""} ${
+                  selected ? "bg-[#EEF0F8]" : "hover:bg-[#FAFAF9]"
                 }`}>
                 <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
                   <input type="checkbox" checked={checkedIds.has(a.id)} onChange={() => onToggleCheck(a.id)}
-                    className="w-3.5 h-3.5 rounded border-[#D8D3C8] text-[#556B2F] focus:ring-[#556B2F]/25 cursor-pointer" />
+                    className="w-3.5 h-3.5 rounded border-[#E5E7EB] text-[#2A3172] focus:ring-[#D0A165]/30 cursor-pointer" />
                 </td>
-                <td className="px-4 py-3.5 font-mono text-xs text-[#6B7D45] font-medium">{a.id}</td>
+                <td className="px-4 py-3.5 font-mono text-xs text-[#3D4589] font-medium">{a.id}</td>
                 <td className="px-4 py-3.5 max-w-[180px]">
-                  <p className="text-[#3E3124] font-medium truncate">{a.name}</p>
-                  <p className="text-xs font-mono text-[#A09580] mt-0.5">{a.serial}</p>
+                  <p className="text-[#2B2B2B] font-medium truncate">{a.name}</p>
+                  <p className="text-xs font-mono text-[#6B7280] mt-0.5">{a.serial}</p>
                 </td>
-                <td className="px-4 py-3.5 text-[#6B7060] text-sm">{a.department}</td>
-                <td className="px-4 py-3.5 text-[#6B7060] text-sm">
-                  {a.assignedTo || <span className="text-[#C4B9A8]">—</span>}
+                <td className="px-4 py-3.5 text-[#6B7280] text-sm">{a.department}</td>
+                <td className="px-4 py-3.5 text-[#6B7280] text-sm">
+                  {a.assignedTo || <span className="text-[#9CA3AF]">—</span>}
                 </td>
                 <td className="px-4 py-3.5"><Chip status={a.status} /></td>
                 <td className="px-4 py-3.5"><CriticalityChip criticality={a.businessCriticality} /></td>
@@ -67,23 +67,23 @@ export function AssetsTable({ assets, selectedId, checkedIds, onSelect, onOpenAs
                     {warranty.label}
                   </span>
                 </td>
-                <td className="px-4 py-3.5 text-[#8B7F72] text-xs">{a.location}</td>
+                <td className="px-4 py-3.5 text-[#6B7280] text-xs">{a.location}</td>
                 <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
                   <div className="flex items-center gap-1">
                     <button onClick={() => onOpenAsset(a.id, "asset-detail")}
-                      className="p-1.5 text-[#8B7F72] hover:text-[#556B2F] hover:bg-[#EEF1E8] rounded-md transition-colors" title="عرض">
+                      className="p-1.5 text-[#6B7280] hover:text-[#2A3172] hover:bg-[#EEF0F8] rounded-md transition-colors" title="عرض">
                       <Eye size={14} />
                     </button>
                     <button onClick={() => onOpenAsset(a.id, "add-asset")}
-                      className="p-1.5 text-[#8B7F72] hover:text-[#556B2F] hover:bg-[#EEF1E8] rounded-md transition-colors" title="تعديل">
+                      className="p-1.5 text-[#6B7280] hover:text-[#2A3172] hover:bg-[#EEF0F8] rounded-md transition-colors" title="تعديل">
                       <Edit size={14} />
                     </button>
                     <button onClick={() => onOpenAsset(a.id, "qr")}
-                      className="p-1.5 text-[#8B7F72] hover:text-[#5B7C99] hover:bg-[#E8F0F8] rounded-md transition-colors" title="رمز QR">
+                      className="p-1.5 text-[#6B7280] hover:text-[#3D4589] hover:bg-[#EEF0F8] rounded-md transition-colors" title="رمز QR">
                       <QrCode size={14} />
                     </button>
                     <button onClick={() => onOpenAsset(a.id, "asset-report")}
-                      className="p-1.5 text-[#8B7F72] hover:text-[#556B2F] hover:bg-[#EEF1E8] rounded-md transition-colors" title="عرض تقرير الأصل">
+                      className="p-1.5 text-[#6B7280] hover:text-[#2A3172] hover:bg-[#EEF0F8] rounded-md transition-colors" title="عرض تقرير الأصل">
                       <FileText size={14} />
                     </button>
                   </div>

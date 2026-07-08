@@ -72,32 +72,32 @@ export function AssetsFilterSidebar({ filters, onChange }: {
     <div className="space-y-3">
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-[#3E3124]">الفلاتر</h3>
+          <h3 className="text-sm font-semibold text-[#2B2B2B]">الفلاتر</h3>
           {activeCount > 0 && (
-            <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#556B2F] text-white text-[10px] font-bold">
+            <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#2A3172] text-white text-[10px] font-bold">
               {activeCount}
             </span>
           )}
         </div>
         {activeCount > 0 && (
           <button onClick={() => onChange(EMPTY_FILTERS)}
-            className="flex items-center gap-1 text-xs text-[#8B7F72] hover:text-[#B04A4A] transition-colors cursor-pointer">
+            className="flex items-center gap-1 text-xs text-[#6B7280] hover:text-[#C44D4D] transition-colors cursor-pointer">
             <RotateCcw size={11} /> إعادة تعيين
           </button>
         )}
       </div>
 
-      <div className="bg-white rounded-xl border border-[#D8D3C8] divide-y divide-[#F0EDE7]">
+      <div className="bg-white rounded-xl border border-[#E5E7EB] divide-y divide-[#E5E7EB]">
         {groups.map(g => (
           <FilterGroup key={g.key} label={g.label} count={filters[g.key].length} defaultOpen={g.defaultOpen}>
             <div className="space-y-1">
               {g.options.map(o => (
                 <label key={o.value}
-                  className="flex items-center gap-2 px-1 py-1.5 rounded-lg hover:bg-[#F7F5F0] cursor-pointer transition-colors">
+                  className="flex items-center gap-2 px-1 py-1.5 rounded-lg hover:bg-[#F7F6F3] cursor-pointer transition-colors">
                   <input type="checkbox" checked={filters[g.key].includes(o.value)} onChange={() => toggle(g.key, o.value)}
-                    className="w-3.5 h-3.5 rounded border-[#D8D3C8] text-[#556B2F] focus:ring-[#556B2F]/25 cursor-pointer" />
+                    className="w-3.5 h-3.5 rounded border-[#E5E7EB] text-[#2A3172] focus:ring-[#D0A165]/30 cursor-pointer" />
                   {o.dot && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: o.dot }} />}
-                  <span className="text-xs text-[#3E3124] truncate">{o.label}</span>
+                  <span className="text-xs text-[#2B2B2B] truncate">{o.label}</span>
                 </label>
               ))}
             </div>
@@ -115,12 +115,12 @@ function FilterGroup({ label, count, defaultOpen, children }: {
   return (
     <div>
       <button onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-3 py-3 text-sm font-medium text-[#3E3124] hover:bg-[#FAFAF8] transition-colors cursor-pointer">
+        className="w-full flex items-center justify-between px-3 py-3 text-sm font-medium text-[#2B2B2B] hover:bg-[#FAFAF9] transition-colors cursor-pointer">
         <span className="flex items-center gap-2">
           {label}
-          {count > 0 && <span className="text-[10px] font-bold text-[#556B2F] bg-[#EEF1E8] rounded-full px-1.5 py-0.5">{count}</span>}
+          {count > 0 && <span className="text-[10px] font-bold text-[#2A3172] bg-[#EEF0F8] rounded-full px-1.5 py-0.5">{count}</span>}
         </span>
-        <ChevronDown size={14} className={`text-[#A09580] transition-transform flex-shrink-0 ${open ? "rotate-180" : ""}`} />
+        <ChevronDown size={14} className={`text-[#6B7280] transition-transform flex-shrink-0 ${open ? "rotate-180" : ""}`} />
       </button>
       {open && <div className="px-3 pb-3">{children}</div>}
     </div>

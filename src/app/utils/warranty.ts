@@ -10,9 +10,9 @@ export function getWarrantyState(expirationISO: string, now: Date = new Date()):
 }
 
 export const WARRANTY_META: Record<WarrantyState, { label: string; bg: string; text: string; dot: string }> = {
-  expired:  { label: "منتهي",         bg: "#FAEAEA", text: "#7A2E2E", dot: "#B04A4A" },
-  expiring: { label: "قريب الانتهاء", bg: "#FDF4DC", text: "#7A5A15", dot: "#C79A32" },
-  valid:    { label: "ساري",          bg: "#EBF4E8", text: "#2E5E23", dot: "#5E8B4A" },
+  expired:  { label: "منتهي",         bg: "#FAEDED", text: "#9E3A3A", dot: "#C44D4D" },
+  expiring: { label: "قريب الانتهاء", bg: "#FDF6ED", text: "#8B6914", dot: "#D0A165" },
+  valid:    { label: "ساري",          bg: "#EDF3EF", text: "#3D6B47", dot: "#4F7C5A" },
 };
 
 export function getWarrantyStatus(expirationISO: string, now: Date = new Date()) {

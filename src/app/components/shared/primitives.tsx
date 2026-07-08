@@ -34,10 +34,10 @@ export function Btn({ children, variant = "primary", size = "md", onClick, icon,
   className?: string;
 }) {
   const v = {
-    primary:   "bg-[#556B2F] text-[#F7F4EE] hover:bg-[#4A5E28] active:bg-[#3E5022]",
-    secondary: "bg-white text-[#3E3124] border border-[#D8D3C8] hover:bg-[#F7F4EE] active:bg-[#EDE8DF]",
-    ghost:     "text-[#556B2F] hover:bg-[#EEF1E8] active:bg-[#E0E8D4]",
-    danger:    "bg-[#B04A4A] text-white hover:bg-[#9A3E3E]",
+    primary:   "bg-[#D0A165] text-[#2B2B2B] hover:bg-[#B8894E] active:bg-[#A07840]",
+    secondary: "bg-white text-[#2B2B2B] border border-[#E5E7EB] hover:bg-[#F7F6F3] active:bg-[#F0EFE9]",
+    ghost:     "text-[#2A3172] hover:bg-[#EEF0F8] active:bg-[#E5E8F5]",
+    danger:    "bg-[#C44D4D] text-white hover:bg-[#B03E3E]",
   }[variant];
   const s = { sm: "text-xs px-3 py-1.5 gap-1.5 rounded-lg", md: "text-sm px-4 py-2 gap-2 rounded-lg", lg: "text-base px-5 py-2.5 gap-2.5 rounded-xl" }[size];
   return (
@@ -55,14 +55,14 @@ export function Inp({ label, placeholder, value, onChange, type = "text", requir
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label className="text-sm font-medium text-[#3E3124]">
-          {label}{required && <span className="text-[#B04A4A] mr-1">*</span>}
+        <label className="text-sm font-medium text-[#2B2B2B]">
+          {label}{required && <span className="text-[#C44D4D] mr-1">*</span>}
         </label>
       )}
       <input type={type} placeholder={placeholder} value={value}
         onChange={e => onChange?.(e.target.value)}
-        className="w-full px-3.5 py-2.5 rounded-lg border border-[#D8D3C8] bg-white text-[#3E3124] text-sm
-          placeholder:text-[#A09580] focus:outline-none focus:ring-2 focus:ring-[#556B2F]/25 focus:border-[#556B2F] transition-all" />
+        className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E7EB] bg-white text-[#2B2B2B] text-sm
+          placeholder:text-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#D0A165]/30 focus:border-[#D0A165] transition-all" />
     </div>
   );
 }
@@ -73,12 +73,12 @@ export function Sel({ label, options, placeholder, required }: {
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label className="text-sm font-medium text-[#3E3124]">
-          {label}{required && <span className="text-[#B04A4A] mr-1">*</span>}
+        <label className="text-sm font-medium text-[#2B2B2B]">
+          {label}{required && <span className="text-[#C44D4D] mr-1">*</span>}
         </label>
       )}
-      <select className="w-full px-3.5 py-2.5 rounded-lg border border-[#D8D3C8] bg-white text-[#3E3124] text-sm
-        focus:outline-none focus:ring-2 focus:ring-[#556B2F]/25 focus:border-[#556B2F] transition-all appearance-none cursor-pointer">
+      <select className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E7EB] bg-white text-[#2B2B2B] text-sm
+        focus:outline-none focus:ring-2 focus:ring-[#D0A165]/30 focus:border-[#D0A165] transition-all appearance-none cursor-pointer">
         {placeholder && <option value="">{placeholder}</option>}
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
@@ -88,9 +88,8 @@ export function Sel({ label, options, placeholder, required }: {
 
 export function Card({ children, className = "", p = true }: { children: ReactNode; className?: string; p?: boolean }) {
   return (
-    <div className={`bg-white rounded-xl border border-[#D8D3C8] shadow-sm ${p ? "p-6" : ""} ${className}`}>
+    <div className={`bg-white rounded-xl border border-[#E5E7EB] shadow-sm ${p ? "p-6" : ""} ${className}`}>
       {children}
     </div>
   );
 }
-
