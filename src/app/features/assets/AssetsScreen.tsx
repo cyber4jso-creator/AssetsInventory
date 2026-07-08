@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   Search, Plus, Upload, Download, SlidersHorizontal, ListChecks, X,
   Package, AlertTriangle, UserCheck, ShieldAlert, PackageCheck,
@@ -10,11 +10,15 @@ import { Btn, Card, Skeleton, StatCard } from "../../components/shared";
 import { AssetsFilterSidebar, EMPTY_FILTERS, matchesFilters } from "./AssetsFilterSidebar";
 import type { AssetFilters } from "./AssetsFilterSidebar";
 import { AssetsTable } from "./AssetsTable";
-import { AssetPreviewPanel } from "./AssetPreviewPanel";
+import { AssetDetailsPanel } from "./AssetDetailsPanel";
 
 // ─────────────────────────────────────────────
 // Assets Management
 // ─────────────────────────────────────────────
+
+const DEFAULT_PANEL_WIDTH = 320;
+const MIN_PANEL_WIDTH = 260;
+const MAX_PANEL_WIDTH = 480;
 
 export function AssetsScreen({ onOpenAsset }: {
   onOpenAsset: (assetId: string | null, screen: Screen) => void;
@@ -26,6 +30,10 @@ export function AssetsScreen({ onOpenAsset }: {
   const [selectedAssetId, setSelectedAssetId]     = useState<string | null>(null);
   const [checkedIds, setCheckedIds]     = useState<Set<string>>(new Set());
   const [page, setPage]                 = useState(1);
+  const [panelWidth, setPanelWidth]     = useState(DEFAULT_PANEL_WIDTH);
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
+  const [panelMobileOpen, setPanelMobileOpen] = useState(false);
+  const resizing = useRef(false);
   const perPage = 6;
 
   useEffect(() => {
@@ -43,8 +51,20 @@ export function AssetsScreen({ onOpenAsset }: {
   const selectedAsset = ASSETS.find(a => a.id === selectedAssetId) ?? null;
   const activeFilterCount = Object.values(filters).reduce((n, v) => n + v.length, 0);
 
+  useEffect(() => {
+    if (selectedAssetId && !filtered.some(a => a.id === selectedAssetId)) {
+      setSelectedAssetId(null);
+      setPanelMobileOpen(false);
+    }
+  }, [filtered, selectedAssetId]);
+
   const updateSearch = (v: string) => { setSearch(v); setPage(1); };
   const updateFilters = (f: AssetFilters) => { setFilters(f); setPage(1); };
+
+  const handleSelectAsset = (id: string) => {
+    setSelectedAssetId(id);
+    setPanelMobileOpen(true);
+  };
 
   const toggleChecked = (id: string) => {
     setCheckedIds(prev => {
@@ -53,6 +73,21 @@ export function AssetsScreen({ onOpenAsset }: {
       return next;
     });
   };
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!resizing.current) return;
+      const next = Math.min(MAX_PANEL_WIDTH, Math.max(MIN_PANEL_WIDTH, window.innerWidth - e.clientX));
+      setPanelWidth(next);
+    };
+    const onUp = () => { resizing.current = false; };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, []);
 
   const totalAssets      = ASSETS.length;
   const criticalCount    = ASSETS.filter(a => a.businessCriticality === "Critical").length;
@@ -69,6 +104,8 @@ export function AssetsScreen({ onOpenAsset }: {
     { label: "ضمان قارب على الانتهاء", value: String(expiringCount), subtext: "خلال 60 يوماً",                icon: ShieldAlert,   iconBg: "#FDF6ED", iconColor: "#8B6914" },
     { label: "الأصول المتاحة",         value: String(availableCount),subtext: pct(availableCount),           icon: PackageCheck,  iconBg: "#EDF3EF", iconColor: "#3D6B47" },
   ];
+
+  const panelColumn = panelCollapsed ? "36px" : `${panelWidth}px`;
 
   return (
     <div className="space-y-5">
@@ -98,13 +135,17 @@ export function AssetsScreen({ onOpenAsset }: {
           : stats.map(s => <StatCard key={s.label} {...s} />)}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[260px_1fr_320px] gap-5 items-start">
-        {/* Filters */}
+      {/* Three-column layout: Filters (right) | Table | Details (left) in RTL */}
+      <div
+        className="grid grid-cols-1 gap-5 items-start xl:grid-cols-[260px_1fr_var(--panel)]"
+        style={{ "--panel": panelColumn } as CSSProperties}
+      >
+        {/* Filters — right side in RTL */}
         <div className={`${mobileFiltersOpen ? "block" : "hidden"} xl:block`}>
           <AssetsFilterSidebar filters={filters} onChange={updateFilters} />
         </div>
 
-        {/* Center */}
+        {/* Center — Assets table */}
         <div className="space-y-4 min-w-0">
           <div className="relative">
             <Search size={16} className="absolute top-1/2 -translate-y-1/2 right-4 text-[#6B7280]" />
@@ -134,7 +175,7 @@ export function AssetsScreen({ onOpenAsset }: {
             ) : (
               <>
                 <AssetsTable assets={paginated} selectedId={selectedAssetId} checkedIds={checkedIds}
-                  onSelect={setSelectedAssetId} onOpenAsset={onOpenAsset} onToggleCheck={toggleChecked} />
+                  onSelect={handleSelectAsset} onOpenAsset={onOpenAsset} onToggleCheck={toggleChecked} />
 
                 {totalPages > 1 && (
                   <div className="p-4 border-t border-[#E5E7EB] flex items-center justify-between">
@@ -156,8 +197,29 @@ export function AssetsScreen({ onOpenAsset }: {
           </Card>
         </div>
 
-        {/* Preview panel — persistent column on wide screens, stacks below on narrow screens */}
-        <AssetPreviewPanel asset={selectedAsset} onOpenAsset={onOpenAsset} />
+        {/* Details panel — left side in RTL */}
+        <div className={`${panelMobileOpen && selectedAsset ? "block" : "hidden"} xl:block relative min-w-0`}>
+          {!panelCollapsed && (
+            <div
+              className="hidden xl:block absolute -right-1 top-0 bottom-0 w-2 cursor-col-resize z-10 group"
+              onMouseDown={() => { resizing.current = true; }}
+              title="سحب لتغيير العرض">
+              <div className="w-0.5 h-full mx-auto bg-transparent group-hover:bg-[#D0A165]/40 transition-colors rounded-full" />
+            </div>
+          )}
+          <AssetDetailsPanel
+            selectedAsset={selectedAsset}
+            collapsed={panelCollapsed}
+            onToggleCollapse={() => setPanelCollapsed(c => !c)}
+          />
+          {panelMobileOpen && selectedAsset && (
+            <button
+              onClick={() => setPanelMobileOpen(false)}
+              className="xl:hidden mt-2 w-full py-2 text-xs text-[#6B7280] hover:text-[#2A3172] transition-colors cursor-pointer">
+              إخفاء التفاصيل
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
