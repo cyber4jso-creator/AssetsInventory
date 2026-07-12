@@ -75,9 +75,9 @@ export function DashboardScreen({ onNavigate }: { onNavigate: NavigateFn }) {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                <XAxis dataKey="m" tick={{ fontSize: 11, fill: "#6B7280", fontFamily: "IBM Plex Sans Arabic" }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="m" tick={{ fontSize: 11, fill: "#6B7280", fontFamily: "Thmanyah Serif Text" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: "#6B7280" }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 12, fontFamily: "IBM Plex Sans Arabic" }} />
+                <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 12, fontFamily: "Thmanyah Serif Text" }} />
                 <Area type="monotone" dataKey="إضافات" stroke="#2A3172" strokeWidth={2} fill="url(#g1)" />
                 <Area type="monotone" dataKey="نقل"     stroke="#3D4589" strokeWidth={2} fill="url(#g2)" />
               </AreaChart>
@@ -95,7 +95,7 @@ export function DashboardScreen({ onNavigate }: { onNavigate: NavigateFn }) {
                 <Pie data={DEPT_PIE} dataKey="value" cx="50%" cy="50%" innerRadius={42} outerRadius={62} paddingAngle={2}>
                   {DEPT_PIE.map((d, i) => <Cell key={i} fill={d.color} />)}
                 </Pie>
-                <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 11, fontFamily: "IBM Plex Sans Arabic" }} />
+                <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 11, fontFamily: "Thmanyah Serif Text" }} />
               </PieChart>
             </ResponsiveContainer>
           </div>

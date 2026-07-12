@@ -90,7 +90,7 @@ function AppShell() {
     <div
       dir="rtl"
       className="flex h-screen overflow-hidden print:h-auto print:overflow-visible"
-      style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif", background: "#F7F6F3" }}
+      style={{ fontFamily: "'Thmanyah Serif Text', system-ui, sans-serif", background: "#F7F6F3" }}
     >
       <Sidebar
         screen={screen}
