@@ -161,7 +161,7 @@ export function LoginScreen() {
 
             <div className="flex flex-col gap-5">
               <div>
-                <Inp label="البريد الإلكتروني" placeholder="user@org.sa" value={email}
+                <Inp label="البريد الإلكتروني" placeholder="employee@org.sa" value={email}
                   onChange={v => { setEmail(v); if (fieldErrors.email) setFieldErrors(e => ({ ...e, email: undefined })); }}
                   required />
                 {fieldErrors.email && <p className="text-xs text-[#C44D4D] mt-1">{fieldErrors.email}</p>}

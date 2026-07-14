@@ -13,8 +13,14 @@ export function AppGlobalStyles() {
         @media print {
           body { background: #fff !important; }
           * { box-shadow: none !important; }
+          .print\\:hidden { display: none !important; }
+          aside, header { display: none !important; }
+          main { padding: 0 !important; overflow: visible !important; }
+          .qr-print-card { border: 1px solid #E5E7EB !important; page-break-inside: avoid; }
+          .asset-report-section { page-break-inside: avoid; }
+          table { width: 100% !important; }
+          @page { margin: 1.5cm; }
         }
       `}</style>
   );
 }
-

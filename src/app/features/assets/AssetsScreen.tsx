@@ -1,49 +1,104 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Search, Plus, Upload, Download, SlidersHorizontal, ListChecks, X,
-  Package, AlertTriangle, UserCheck, ShieldAlert, PackageCheck,
+  Search, Plus, Upload, Download, ListChecks, X,
 } from "lucide-react";
-import type { Screen } from "../../types";
-import { ASSETS } from "../../data/mock";
-import { getWarrantyState } from "../../utils/warranty";
-import { Btn, Card, Skeleton, StatCard } from "../../components/shared";
-import { useAuth, hasPermission } from "../../auth";
-import { AssetsFilterSidebar, EMPTY_FILTERS, matchesFilters } from "./AssetsFilterSidebar";
-import type { AssetFilters } from "./AssetsFilterSidebar";
+import type { Asset, Screen } from "../../types";
+import { Btn, Card, Skeleton, PaginationBar, toast } from "../../components/shared";
+import { useAuth, hasPermission, hasReportsExport } from "../../auth";
+import { getVisibleAssetsForUser } from "../../utils/assetScope";
+import { exportToCsv } from "../../utils/csvExport";
+import { useAssetsData } from "./contexts/AssetsDataContext";
+import { AssetsFilterBar } from "./components/AssetsFilterBar";
+import { CategoryTabs } from "./components/CategoryTabs";
+import {
+  EMPTY_ROLE_FILTERS,
+  hasActiveRoleExplorerState,
+  matchesRoleFilters,
+  type RoleAssetFilters,
+} from "./utils/roleAssetFilters";
+import type { ExplorerTabId } from "./utils/assetExplorer";
+import { matchesExplorerTab, matchesSearch } from "./utils/assetExplorer";
+import { getTotalPages } from "../../utils/paginate";
 import { AssetsTable } from "./AssetsTable";
 import { AssetDetailsPanel } from "./AssetDetailsPanel";
 import { ColumnVisibilityPopover } from "./ColumnVisibilityPopover";
 
 // ─────────────────────────────────────────────
-// Assets Management
+// Assets Management — Enterprise Asset Explorer
 // ─────────────────────────────────────────────
 
-export function AssetsScreen({ onOpenAsset }: {
+const PER_PAGE = 10;
+
+type AssetSortKey = "id" | "name" | "department" | "status" | "category";
+
+const SORT_OPTIONS: { key: AssetSortKey; label: string }[] = [
+  { key: "id", label: "رقم الأصل" },
+  { key: "name", label: "الاسم" },
+  { key: "department", label: "القسم" },
+  { key: "status", label: "الحالة" },
+  { key: "category", label: "الفئة" },
+];
+
+export function AssetsScreen({ onOpenAsset, initialSearch }: {
   onOpenAsset: (assetId: string | null, screen: Screen) => void;
+  initialSearch?: string;
 }) {
-  const [loading, setLoading]           = useState(true);
-  const [search, setSearch]             = useState("");
-  const [filters, setFilters]           = useState<AssetFilters>(EMPTY_FILTERS);
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [selectedAssetId, setSelectedAssetId]     = useState<string | null>(null);
-  const [checkedIds, setCheckedIds]     = useState<Set<string>>(new Set());
-  const [page, setPage]                 = useState(1);
-  const perPage = 6;
+  const [loading, setLoading]               = useState(true);
+  const [search, setSearch]                 = useState(initialSearch ?? "");
+  const [activeTab, setActiveTab]           = useState<ExplorerTabId>("all");
+  const [filters, setFilters]               = useState<RoleAssetFilters>(EMPTY_ROLE_FILTERS);
+  const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
+  const [checkedIds, setCheckedIds]         = useState<Set<string>>(new Set());
+  const [page, setPage]                     = useState(1);
+  const [sortKey, setSortKey]               = useState<AssetSortKey>("id");
+  const [sortAsc, setSortAsc]               = useState(true);
+
+  const { currentUser } = useAuth();
+  const { assets } = useAssetsData();
+
+  const visibleAssets = useMemo(
+    () => getVisibleAssetsForUser(assets, currentUser),
+    [assets, currentUser],
+  );
 
   useEffect(() => {
     const t = setTimeout(() => setLoading(false), 500);
     return () => clearTimeout(t);
   }, []);
 
-  const q = search.trim();
-  const filtered = ASSETS.filter(a =>
-    matchesFilters(a, filters) &&
-    (!q || a.name.includes(q) || a.id.includes(q) || a.assignedTo.includes(q) || a.serial.includes(q))
+  useEffect(() => {
+    if (initialSearch) setSearch(initialSearch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialSearch]);
+
+  const filtered = useMemo(
+    () => visibleAssets.filter(a =>
+      matchesExplorerTab(a, activeTab) &&
+      matchesRoleFilters(a, filters) &&
+      matchesSearch(a, search),
+    ),
+    [visibleAssets, activeTab, filters, search],
   );
-  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
-  const paginated   = filtered.slice((page - 1) * perPage, page * perPage);
-  const selectedAsset = ASSETS.find(a => a.id === selectedAssetId) ?? null;
-  const activeFilterCount = Object.values(filters).reduce((n, v) => n + v.length, 0);
+
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    arr.sort((a, b) => {
+      const av = String(a[sortKey] ?? "");
+      const bv = String(b[sortKey] ?? "");
+      const cmp = av.localeCompare(bv, "ar");
+      return sortAsc ? cmp : -cmp;
+    });
+    return arr;
+  }, [filtered, sortKey, sortAsc]);
+
+  const totalPages = getTotalPages(sorted.length, PER_PAGE);
+  const safePage = Math.min(page, totalPages);
+  const paginated = sorted.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
+  const selectedAsset = visibleAssets.find(a => a.id === selectedAssetId) ?? null;
+
+  useEffect(() => {
+    if (safePage !== page) setPage(safePage);
+  }, [safePage, page]);
 
   useEffect(() => {
     if (selectedAssetId && !filtered.some(a => a.id === selectedAssetId)) {
@@ -51,8 +106,27 @@ export function AssetsScreen({ onOpenAsset }: {
     }
   }, [filtered, selectedAssetId]);
 
-  const updateSearch = (v: string) => { setSearch(v); setPage(1); };
-  const updateFilters = (f: AssetFilters) => { setFilters(f); setPage(1); };
+  const resetExplorer = () => {
+    setSearch("");
+    setActiveTab("all");
+    setFilters(EMPTY_ROLE_FILTERS);
+    setPage(1);
+  };
+
+  const updateSearch = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
+
+  const updateFilters = (next: RoleAssetFilters) => {
+    setFilters(next);
+    setPage(1);
+  };
+
+  const updateTab = (tab: ExplorerTabId) => {
+    setActiveTab(tab);
+    setPage(1);
+  };
 
   const toggleChecked = (id: string) => {
     setCheckedIds(prev => {
@@ -62,44 +136,32 @@ export function AssetsScreen({ onOpenAsset }: {
     });
   };
 
-  const totalAssets      = ASSETS.length;
-  const criticalCount    = ASSETS.filter(a => a.businessCriticality === "Critical").length;
-  const assignedCount    = ASSETS.filter(a => a.assignedTo).length;
-  const availableCount   = ASSETS.filter(a => !a.assignedTo).length;
-  const expiringCount    = ASSETS.filter(a => getWarrantyState(a.warrantyExpiration) === "expiring").length;
-  const departmentCount  = new Set(ASSETS.map(a => a.department)).size;
-  const pct = (n: number) => `${Math.round((n / totalAssets) * 100)}% من الإجمالي`;
-
-  const stats = [
-    { label: "إجمالي الأصول",         value: String(totalAssets),   subtext: `عبر ${departmentCount} أقسام`, icon: Package,       iconBg: "#EEF0F8", iconColor: "#2A3172" },
-    { label: "الأصول الحرجة",          value: String(criticalCount), subtext: pct(criticalCount),            icon: AlertTriangle, iconBg: "#FAEDED", iconColor: "#C44D4D" },
-    { label: "الأصول المسندة",         value: String(assignedCount), subtext: pct(assignedCount),            icon: UserCheck,     iconBg: "#EEF0F8", iconColor: "#2A3172" },
-    { label: "ضمان قارب على الانتهاء", value: String(expiringCount), subtext: "خلال 60 يوماً",                icon: ShieldAlert,   iconBg: "#FDF6ED", iconColor: "#8B6914" },
-    { label: "الأصول المتاحة",         value: String(availableCount),subtext: pct(availableCount),           icon: PackageCheck,  iconBg: "#EDF3EF", iconColor: "#3D6B47" },
-  ];
-
-  const { currentUser } = useAuth();
   const canCreate = hasPermission(currentUser, "assets.create");
-  const canExport = hasPermission(currentUser, "reports.export");
+  const canExport = hasReportsExport(currentUser);
+
+  const exportAssets = (list: Asset[]) => {
+    exportToCsv(
+      "assets-export",
+      ["رقم الأصل", "الاسم", "الفئة", "القسم", "الحالة", "المسؤول", "تاريخ الشراء", "القيمة"],
+      list.map(a => [a.id, a.name, a.category, a.department, a.status, a.assignedUserId ?? "", a.purchaseDate, a.value]),
+    );
+    toast.success("تم تصدير الملف بنجاح", `${list.length} أصل تم تصديرهم إلى CSV`);
+  };
+
+  if (!currentUser) return null;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 w-full">
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-[#2B2B2B]">إدارة الأصول</h1>
-          <p className="text-sm text-[#6B7280] mt-0.5">إدارة ومراقبة أصول المؤسسة بكفاءة</p>
+          <p className="text-sm text-[#6B7280] mt-0.5">استكشف وإدارة أصول المؤسسة عبر منصة موحدة</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Btn variant="secondary" size="sm" icon={<SlidersHorizontal size={13} />} className="xl:hidden"
-            onClick={() => setMobileFiltersOpen(o => !o)}>
-            الفلاتر{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-          </Btn>
-          <span title="قريباً">
-            <Btn variant="secondary" size="sm" icon={<Upload size={13} />} disabled>استيراد</Btn>
-          </span>
+          <Btn variant="secondary" size="sm" icon={<Upload size={13} />} onClick={() => toast.deferred("استيراد الأصول")}>استيراد</Btn>
           {canExport && (
-            <Btn variant="secondary" size="sm" icon={<Download size={13} />}>تصدير</Btn>
+            <Btn variant="secondary" size="sm" icon={<Download size={13} />} onClick={() => exportAssets(filtered)}>تصدير</Btn>
           )}
           {canCreate && (
             <Btn variant="primary" icon={<Plus size={15} />} onClick={() => onOpenAsset(null, "add-asset")}>إضافة أصل</Btn>
@@ -107,77 +169,104 @@ export function AssetsScreen({ onOpenAsset }: {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        {loading
-          ? Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-[92px]" />)
-          : stats.map(s => <StatCard key={s.label} {...s} />)}
-      </div>
-
-      {/* Two-column layout: Filters (right) | Table + Details below (left) in RTL */}
-      <div className="grid grid-cols-1 gap-5 items-start xl:grid-cols-[260px_1fr]">
-        {/* Filters — right side in RTL */}
-        <div className={`${mobileFiltersOpen ? "block" : "hidden"} xl:block`}>
-          <AssetsFilterSidebar filters={filters} onChange={updateFilters} />
+      {/* Explorer workspace */}
+      <div className="space-y-4 min-w-0 w-full">
+        <div className="relative">
+          <Search size={16} className="absolute top-1/2 -translate-y-1/2 right-4 text-[#6B7280]" aria-hidden />
+          <input
+            placeholder="ابحث برقم الأصل، الاسم، الفئة، المورّد، المسؤول، القسم، الرقم التسلسلي، اسم المضيف، أو عنوان IP..."
+            value={search}
+            onChange={e => updateSearch(e.target.value)}
+            aria-label="بحث في الأصول"
+            className="w-full pr-11 pl-4 py-3 text-sm rounded-xl border border-[#E5E7EB] bg-white
+              placeholder:text-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#D0A165]/30 focus:border-[#D0A165]"
+          />
         </div>
 
-        {/* Center — table, full width, details panel below it */}
-        <div className="space-y-4 min-w-0">
-          <div className="relative">
-            <Search size={16} className="absolute top-1/2 -translate-y-1/2 right-4 text-[#6B7280]" />
-            <input placeholder="ابحث باسم الأصل، الرقم، المسؤول، الرقم التسلسلي..." value={search}
-              onChange={e => updateSearch(e.target.value)}
-              className="w-full pr-11 pl-4 py-3 text-sm rounded-xl border border-[#E5E7EB] bg-white
-                placeholder:text-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#D0A165]/30 focus:border-[#D0A165]" />
+        <div className="flex items-center gap-3 flex-wrap">
+          <label className="text-xs text-[#6B7280]">ترتيب حسب</label>
+          <select
+            value={sortKey}
+            onChange={e => { setSortKey(e.target.value as AssetSortKey); setPage(1); }}
+            aria-label="ترتيب الأصول"
+            className="text-sm px-3 py-2 rounded-lg border border-[#E5E7EB] bg-white text-[#2B2B2B] focus:outline-none appearance-none cursor-pointer"
+          >
+            {SORT_OPTIONS.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+          </select>
+          <button
+            type="button"
+            onClick={() => setSortAsc(a => !a)}
+            aria-label={sortAsc ? "ترتيب تصاعدي" : "ترتيب تنازلي"}
+            className="text-xs px-3 py-2 rounded-lg border border-[#E5E7EB] bg-white text-[#2A3172] hover:bg-[#F7F6F3] cursor-pointer"
+          >
+            {sortAsc ? "↑ تصاعدي" : "↓ تنازلي"}
+          </button>
+        </div>
+
+        <AssetsFilterBar
+          filters={filters}
+          onChange={updateFilters}
+          visibleAssets={visibleAssets}
+          currentUser={currentUser}
+        />
+
+        {checkedIds.size > 0 && (
+          <div className="flex items-center gap-3 px-4 py-2.5 bg-[#EEF0F8] border border-[#D5DCE8] rounded-xl">
+            <ListChecks size={15} className="text-[#2A3172] flex-shrink-0" />
+            <span className="text-sm font-medium text-[#2A3172]">{checkedIds.size} محدد</span>
+            {canExport && (
+              <Btn variant="ghost" size="sm" onClick={() => exportAssets(visibleAssets.filter(a => checkedIds.has(a.id)))}>
+                تصدير المحدد
+              </Btn>
+            )}
+            <button
+              type="button"
+              onClick={() => setCheckedIds(new Set())}
+              className="mr-auto flex items-center gap-1 text-xs text-[#2A3172] hover:text-[#222966] transition-colors cursor-pointer"
+            >
+              <X size={12} /> إلغاء التحديد
+            </button>
           </div>
+        )}
 
-          {checkedIds.size > 0 && (
-            <div className="flex items-center gap-3 px-4 py-2.5 bg-[#EEF0F8] border border-[#D5DCE8] rounded-xl">
-              <ListChecks size={15} className="text-[#2A3172] flex-shrink-0" />
-              <span className="text-sm font-medium text-[#2A3172]">{checkedIds.size} محدد</span>
-              {canExport && <Btn variant="ghost" size="sm">تصدير المحدد</Btn>}
-              <button onClick={() => setCheckedIds(new Set())}
-                className="mr-auto flex items-center gap-1 text-xs text-[#2A3172] hover:text-[#222966] transition-colors cursor-pointer">
-                <X size={12} /> إلغاء التحديد
-              </button>
-            </div>
-          )}
-
-          <Card p={false}>
-            <div className="px-4 pt-3 pb-1 flex items-center justify-end border-b border-[#E5E7EB]">
+        <Card p={false} className="w-full">
+          <div className="px-4 pt-2 border-b border-[#E5E7EB] flex items-end justify-between gap-3 flex-wrap">
+            <CategoryTabs active={activeTab} onChange={updateTab} assets={visibleAssets} />
+            <div className="pb-2">
               <ColumnVisibilityPopover />
             </div>
-            {loading ? (
-              <div className="p-4 space-y-3">
-                {Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-12" />)}
-              </div>
-            ) : (
-              <>
-                <AssetsTable assets={paginated} selectedId={selectedAssetId} checkedIds={checkedIds}
-                  onSelect={setSelectedAssetId} onOpenAsset={onOpenAsset} onToggleCheck={toggleChecked} />
+          </div>
 
-                {totalPages > 1 && (
-                  <div className="p-4 border-t border-[#E5E7EB] flex items-center justify-between">
-                    <span className="text-xs text-[#6B7280]">
-                      عرض {filtered.length === 0 ? 0 : (page - 1) * perPage + 1}–{Math.min(page * perPage, filtered.length)} من {filtered.length}
-                    </span>
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                        <button key={p} onClick={() => setPage(p)}
-                          className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors cursor-pointer ${p === page ? "bg-[#2A3172] text-white" : "text-[#6B7280] hover:bg-[#F0EFE9]"}`}>
-                          {p}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </Card>
+          {loading ? (
+            <div className="p-4 space-y-3">
+              {Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-12" />)}
+            </div>
+          ) : (
+            <>
+              <AssetsTable
+                assets={paginated}
+                selectedId={selectedAssetId}
+                checkedIds={checkedIds}
+                onSelect={setSelectedAssetId}
+                onOpenAsset={onOpenAsset}
+                onToggleCheck={toggleChecked}
+                onResetFilters={
+                  hasActiveRoleExplorerState(filters, search, activeTab) ? resetExplorer : undefined
+                }
+              />
 
-          {/* Details panel — full width, below the table */}
-          <AssetDetailsPanel selectedAsset={selectedAsset} />
-        </div>
+              <PaginationBar
+                page={safePage}
+                totalPages={totalPages}
+                totalItems={sorted.length}
+                perPage={PER_PAGE}
+                onPageChange={setPage}
+              />
+            </>
+          )}
+        </Card>
+
+        <AssetDetailsPanel selectedAsset={selectedAsset} />
       </div>
     </div>
   );

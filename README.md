@@ -2,7 +2,19 @@
 
 A modern, scalable, and backend-ready Asset Inventory Management System designed to help organizations manage, track, and monitor their physical assets throughout their lifecycle.
 
-The project focuses on usability, maintainability, and future scalability while following a feature-based architecture and role-based access control (RBAC). The current version includes a complete frontend prototype with realistic mock data and is prepared for backend and database integration.
+The current version is a **Sprint 1** frontend prototype with realistic mock data, unified demo users, RBAC enforcement, and a structure prepared for Sprint 3 backend integration.
+
+---
+
+## Official Roadmap
+
+| Sprint | Scope |
+|--------|--------|
+| **Sprint 1** ✅ | Identity, demo users, data consistency, RBAC, frontend stabilization |
+| **Sprint 2** | Frontend polish — UX, forms, QR/print/report layouts, empty & loading states, confirmations, toasts |
+| **Sprint 3** | Backend — NestJS, Prisma, PostgreSQL, authentication, REST APIs, frontend integration |
+
+See [docs/SPRINT_ROADMAP.md](./docs/SPRINT_ROADMAP.md) for details.
 
 ---
 
@@ -51,10 +63,12 @@ The application has been designed to be easily connected to PostgreSQL and REST 
 - Tailwind CSS
 - Lucide React Icons
 
-### Planned Backend
+### Backend (Sprint 3 — planned)
 
-- Node.js / Express (Planned)
-- PostgreSQL (Planned)
+- NestJS
+- Prisma
+- PostgreSQL
+- REST APIs
 
 ---
 
@@ -64,9 +78,9 @@ The application has been designed to be easily connected to PostgreSQL and REST 
 src/
 │
 ├── app/
-│   ├── auth/               # Authentication & RBAC
+│   ├── auth/               # Authentication, RBAC, data scope (Sprint 3)
 │   ├── components/         # Shared UI Components
-│   ├── data/               # Mock Data
+│   ├── data/               # Mock data, demo users, dashboard stats
 │   ├── features/
 │   │     ├── dashboard/
 │   │     ├── assets/
@@ -99,13 +113,13 @@ Passw0rd!
 
 ## Demo Users
 
-| Role | Email |
-|------|-------|
-| Super Admin | n.qahtani@org.sa |
-| Asset Manager | a.shammari@org.sa |
-| Department Manager | r.anzi@org.sa |
-| Employee | b.harbi@org.sa |
-| Auditor | m.dosari@org.sa |
+| Name | Role | Email |
+|------|------|-------|
+| Ahmed | Employee | employee@org.sa |
+| Sara | Department Manager | department.manager@org.sa |
+| Khalid | Sector Manager | sector.manager@org.sa |
+| Fatimah | Asset Manager | asset.manager@org.sa |
+| Omar | Auditor | auditor@org.sa |
 
 All demo accounts use the same password.
 
@@ -113,15 +127,15 @@ All demo accounts use the same password.
 
 # Role-Based Access
 
-The system currently supports:
+The system supports:
 
-- Super Admin
-- Asset Manager
-- Department Manager
 - Employee
+- Department Manager
+- Sector Manager
+- Asset Manager
 - Auditor
 
-Permissions are managed through a centralized RBAC configuration.
+Permissions are managed through a centralized RBAC configuration. Data scope helpers (`auth/scope`) prepare list endpoints for Sprint 3 filtering (own / department / sector / organization).
 
 ---
 
@@ -145,9 +159,9 @@ Future integration will connect the assistant with:
 
 ---
 
-# Future Backend Integration
+# Future Backend Integration (Sprint 3)
 
-The frontend has been prepared for:
+The frontend is prepared for:
 
 - PostgreSQL Database
 - REST APIs
@@ -196,16 +210,11 @@ npm run build
 
 # Roadmap
 
-- PostgreSQL Integration
-- REST API Integration
-- File Upload Support
-- Real Authentication
-- Asset History
-- Maintenance Module
-- Audit Logs
-- AI Assistant Integration
-- Dashboard Analytics
-- Notification System
+See [docs/SPRINT_ROADMAP.md](./docs/SPRINT_ROADMAP.md).
+
+**Sprint 2 (next):** Frontend polish — UX, forms, layouts, empty/loading states, confirmations, toasts.
+
+**Sprint 3:** PostgreSQL, NestJS, Prisma, REST APIs, real authentication, scoped data filtering.
 
 ---
 

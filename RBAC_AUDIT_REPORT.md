@@ -1,5 +1,7 @@
 # RBAC Audit Report
 
+> **Note (2026-07-14):** This report reflects an earlier audit cycle (pre–Sprint 1 RBAC overhaul). Current roles, permissions, and demo users are defined in `src/app/auth/` and documented in [docs/SPRINT_1_COMPLETION_REPORT.md](./docs/SPRINT_1_COMPLETION_REPORT.md).
+
 **Project:** Enterprise Asset Management System (AMS)
 **Audit date:** 2026-07-08
 **Scope:** Full codebase — auth module, routing shell, all features, layout, and UI actions

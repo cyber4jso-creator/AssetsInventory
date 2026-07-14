@@ -6,6 +6,7 @@ import type { Asset } from "../../types";
 import { ASSET_HISTORY, STATUS } from "../../data/mock";
 import { Card, Chip, EmptyState } from "../../components/shared";
 import { WARRANTY_META, getWarrantyState } from "../../utils/warranty";
+import { getAssetAssigneeName } from "../../utils/userDisplay";
 
 // ─────────────────────────────────────────────
 // Asset Details Panel — ملخص كامل للأصل المحدد
@@ -109,7 +110,7 @@ function GeneralContent({ asset }: { asset: Asset }) {
 
       <div className="border-t border-[#E5E7EB] pt-4">
         <Section title="الإسناد والموقع">
-          <DetailRow label="الموظف المسند" value={asset.assignedTo || "بدون مسؤول"} />
+          <DetailRow label="الموظف المسند" value={getAssetAssigneeName(asset) || "بدون مسؤول"} />
           <DetailRow label="القسم" value={asset.department} />
           <DetailRow label="الموقع" value={asset.location} />
           <DetailRow label="المبنى" value={building} />

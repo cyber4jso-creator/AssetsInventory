@@ -1,8 +1,8 @@
 export type Role =
-  | "super-admin"
-  | "asset-manager"
-  | "department-manager"
   | "employee"
+  | "department-manager"
+  | "sector-manager"
+  | "asset-manager"
   | "auditor";
 
 export type Permission =
@@ -14,9 +14,15 @@ export type Permission =
   | "assets.qr"
   | "reports.view"
   | "reports.export"
+  | "reports.view.own"
+  | "reports.export.own"
+  | "reports.view.department"
+  | "reports.export.department"
+  | "reports.view.sector"
+  | "reports.export.sector"
   | "users.manage"
   | "settings.manage"
-  | "settings.view"
+  | "profile.manage"
   | "requests.view"
   | "requests.create"
   | "requests.approve"
@@ -32,6 +38,8 @@ export interface AuthUser {
   name: string;
   email: string;
   department: string;
+  departmentId: string;
+  sectorId: string;
   jobTitle: string;
   avatar: string;
   role: Role;

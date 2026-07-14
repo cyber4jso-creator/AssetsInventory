@@ -2,7 +2,7 @@ export type Screen =
   | "dashboard" | "assets" | "asset-detail" | "asset-report" | "add-asset"
   | "transfer" | "qr" | "requests" | "reports"
   | "user-management" | "roles" | "audit-log"
-  | "ai-assistant" | "notifications" | "settings";
+  | "ai-assistant" | "notifications" | "profile" | "settings";
 
 export type AssetStatus = "active" | "maintenance" | "reserved" | "inactive" | "transferred";
 
@@ -14,10 +14,12 @@ export interface Asset {
   category: string;
   type: string;
   department: string;
+  departmentId: string;
+  sectorId: string;
   location: string;
   status: AssetStatus;
   businessCriticality: BusinessCriticality;
-  assignedTo: string;
+  assignedUserId: string | null;
   purchaseDate: string;
   warrantyExpiration: string;
   value: number;
@@ -42,6 +44,7 @@ export interface AssetHistoryEvent {
   type: AssetHistoryEventType;
   timestamp: string;
   performedBy: string;
+  performedByUserId?: string;
   from?: string;
   to?: string;
   fromDepartment?: string;
@@ -55,4 +58,51 @@ export interface AssetHistoryEvent {
 }
 
 export type NavigateFn = (screen: Screen) => void;
+
+export interface NotificationItem {
+  id: number;
+  title: string;
+  body: string;
+  time: string;
+  read: boolean;
+  type: "warning" | "success" | "info";
+}
+
+export interface AssetAttachment {
+  id: string;
+  assetId: string;
+  name: string;
+  size: string;
+  uploadedAt: string;
+  uploadedByUserId: string;
+}
+
+export interface AuditLogEntry {
+  id: number;
+  time: string;
+  userId: string | null;
+  action: string;
+  entity: string;
+  details: string;
+  type: "create" | "update" | "delete" | "auth";
+}
+
+export type RequestType = "transfer" | "maintenance" | "purchase" | "disposal";
+export type RequestPriority = "low" | "medium" | "high" | "urgent";
+export type RequestStatus = "pending" | "approved" | "rejected" | "completed";
+
+export interface AssetRequest {
+  id: string;
+  type: RequestType;
+  asset: string;
+  assetId: string;
+  requesterUserId: string;
+  reason: string;
+  priority: RequestPriority;
+  notes?: string;
+  from?: string;
+  to?: string;
+  date: string;
+  status: RequestStatus;
+}
 

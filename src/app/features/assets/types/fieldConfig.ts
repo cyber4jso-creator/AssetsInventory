@@ -5,16 +5,17 @@
 export type AssetColumnId =
   | "id"
   | "name"
+  | "category"
   | "department"
   | "status"
   | "assignedTo"
   | "businessCriticality"
+  | "lastUpdated"
   | "warranty"
   | "location"
-  | "serial"
-  | "category";
+  | "serial";
 
-export type CoreAssetColumnId = "id" | "name" | "department" | "status";
+export type CoreAssetColumnId = "id" | "name" | "category" | "department" | "assignedTo" | "status";
 
 export type CustomFieldType = "text" | "number" | "date" | "dropdown" | "checkbox" | "currency";
 
@@ -45,7 +46,7 @@ export interface CustomFieldDefinition {
 
 export type TableColumnKey = AssetColumnId | `custom:${string}`;
 
-export const CORE_COLUMN_IDS: CoreAssetColumnId[] = ["id", "name", "department", "status"];
+export const CORE_COLUMN_IDS: CoreAssetColumnId[] = ["id", "name", "category", "department", "assignedTo", "status"];
 
 export const CUSTOM_FIELD_TYPE_LABELS: Record<CustomFieldType, string> = {
   text: "نص",

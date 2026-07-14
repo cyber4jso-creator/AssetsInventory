@@ -3,7 +3,7 @@ import { Plus, Trash2, Pencil, X, Check } from "lucide-react";
 import type { CustomFieldDefinition, CustomFieldType } from "../assets/types/fieldConfig";
 import { CUSTOM_FIELD_TYPE_LABELS } from "../assets/types/fieldConfig";
 import { useAssetFieldConfig } from "../assets/contexts/AssetFieldConfigContext";
-import { Btn, Card, Inp } from "../../components/shared";
+import { Btn, Card, Inp, ConfirmDialog, toast } from "../../components/shared";
 
 // ─────────────────────────────────────────────
 // Settings — Custom Fields (Super Admin)
@@ -26,6 +26,7 @@ export function CustomFieldsSettings() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<CustomFieldDefinition | null>(null);
 
   const resetForm = () => {
     setForm(EMPTY_FORM);
@@ -116,7 +117,7 @@ export function CustomFieldsSettings() {
                   className="p-1.5 text-[#6B7280] hover:text-[#2A3172] hover:bg-[#EEF0F8] rounded-md transition-colors cursor-pointer">
                   <Pencil size={14} />
                 </button>
-                <button onClick={() => removeCustomField(field.id)}
+                <button onClick={() => setRemoveTarget(field)}
                   className="p-1.5 text-[#6B7280] hover:text-[#C44D4D] hover:bg-[#FAEDED] rounded-md transition-colors cursor-pointer">
                   <Trash2 size={14} />
                 </button>
@@ -171,6 +172,21 @@ export function CustomFieldsSettings() {
           </div>
         )}
       </Card>
+
+      <ConfirmDialog
+        open={removeTarget !== null}
+        onOpenChange={open => !open && setRemoveTarget(null)}
+        title="حذف الحقل المخصص"
+        description={`هل أنت متأكد من حذف حقل "${removeTarget?.label}"؟ سيتم حذف قيمه من جميع الأصول.`}
+        confirmLabel="حذف"
+        onConfirm={() => {
+          if (removeTarget) {
+            removeCustomField(removeTarget.id);
+            toast.success("تم حذف الحقل المخصص بنجاح");
+          }
+          setRemoveTarget(null);
+        }}
+      />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { ElementType } from "react";
 import {
   Plus, Package, CheckCircle, Clock, ArrowLeftRight, QrCode, BarChart3,
@@ -7,47 +8,72 @@ import {
   CartesianGrid, XAxis, YAxis, Tooltip,
 } from "recharts";
 import type { NavigateFn, Screen } from "../../types";
-import { ASSETS, KPI_DATA, MONTHLY, DEPT_PIE } from "../../data/mock";
+import { ASSET_HISTORY } from "../../data/mock";
 import { Btn, Card, Chip } from "../../components/shared";
-import { useAuth, hasPermission, SCREEN_PERMISSIONS } from "../../auth";
+import { useAuth, hasPermission, hasReportsAccess, SCREEN_PERMISSIONS } from "../../auth";
+import { buildScopedDashboardView, getVisibleAssetsForUser } from "../../utils/assetScope";
+import { useAssetsData } from "../assets/contexts/AssetsDataContext";
 
 // ─────────────────────────────────────────────
 // Dashboard
 // ─────────────────────────────────────────────
 
-export function DashboardScreen({ onNavigate }: { onNavigate: NavigateFn }) {
+const KPI_ICONS = [Package, CheckCircle, Clock, ArrowLeftRight] as const;
+const KPI_COLORS = ["#2A3172", "#4F7C5A", "#D0A165", "#3D4589"] as const;
+const KPI_BGS = ["#EEF0F8", "#EDF3EF", "#FDF6ED", "#EEF0F8"] as const;
+
+export function DashboardScreen({ onNavigate, onOpenAsset }: {
+  onNavigate: NavigateFn;
+  onOpenAsset: (id: string | null, target: Screen) => void;
+}) {
   const { currentUser } = useAuth();
+  const { assets } = useAssetsData();
+
+  const visibleAssets = useMemo(
+    () => getVisibleAssetsForUser(assets, currentUser),
+    [assets, currentUser],
+  );
+
+  const dashboardView = useMemo(
+    () => buildScopedDashboardView(visibleAssets, ASSET_HISTORY),
+    [visibleAssets],
+  );
+
+  const recentAssets = useMemo(
+    () => [...visibleAssets].sort((a, b) => b.purchaseDate.localeCompare(a.purchaseDate)).slice(0, 5),
+    [visibleAssets],
+  );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#2B2B2B]">مرحباً، {currentUser?.name.split(" ")[0]}</h1>
+          <h1 className="text-2xl font-bold text-[#2B2B2B]">مرحباً، {currentUser?.name}</h1>
           <p className="text-sm text-[#6B7280] mt-0.5">
             {new Date().toLocaleDateString("ar-SA", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
           </p>
         </div>
         {hasPermission(currentUser, "assets.create") && (
-          <Btn variant="primary" icon={<Plus size={15} />} onClick={() => onNavigate("add-asset")}>إضافة أصل</Btn>
+          <Btn variant="primary" icon={<Plus size={15} />} onClick={() => onOpenAsset(null, "add-asset")}>إضافة أصل</Btn>
         )}
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {KPI_DATA.map(k => {
-          const Icon = k.icon;
+        {dashboardView.kpiCards.map((k, i) => {
+          const Icon = KPI_ICONS[i];
           return (
             <Card key={k.label} className="flex items-start justify-between">
               <div>
                 <p className="text-xs text-[#6B7280] mb-2 leading-tight">{k.label}</p>
                 <p className="text-3xl font-bold text-[#2B2B2B] leading-none">{k.value}</p>
                 <p className={`text-xs mt-2 font-medium ${k.up ? "text-[#4F7C5A]" : "text-[#C44D4D]"}`}>
-                  {k.change} عن الشهر الماضي
+                  بيانات محدثة
                 </p>
               </div>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: k.bg }}>
-                <Icon size={18} style={{ color: k.color }} />
+                style={{ background: KPI_BGS[i] }}>
+                <Icon size={18} style={{ color: KPI_COLORS[i] }} />
               </div>
             </Card>
           );
@@ -59,11 +85,11 @@ export function DashboardScreen({ onNavigate }: { onNavigate: NavigateFn }) {
         <Card className="lg:col-span-2" p={false}>
           <div className="p-5 pb-0 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-[#2B2B2B]">نشاط الأصول — آخر 6 أشهر</h3>
-            <span className="text-xs text-[#6B7280]">2024</span>
+            <span className="text-xs text-[#6B7280]">{dashboardView.chartYear}</span>
           </div>
           <div className="px-2 pt-2 pb-4" style={{ height: 220 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={MONTHLY} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+              <AreaChart data={dashboardView.monthly} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                 <defs>
                   <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%"  stopColor="#2A3172" stopOpacity={0.15} />
@@ -92,15 +118,15 @@ export function DashboardScreen({ onNavigate }: { onNavigate: NavigateFn }) {
           <div style={{ height: 150 }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={DEPT_PIE} dataKey="value" cx="50%" cy="50%" innerRadius={42} outerRadius={62} paddingAngle={2}>
-                  {DEPT_PIE.map((d, i) => <Cell key={i} fill={d.color} />)}
+                <Pie data={dashboardView.deptPie} dataKey="value" cx="50%" cy="50%" innerRadius={42} outerRadius={62} paddingAngle={2}>
+                  {dashboardView.deptPie.map((d, i) => <Cell key={i} fill={d.color} />)}
                 </Pie>
                 <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 11, fontFamily: "Thmanyah Serif Text" }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
           <div className="px-5 pb-5 space-y-1.5">
-            {DEPT_PIE.map(d => (
+            {dashboardView.deptPie.map(d => (
               <div key={d.name} className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: d.color }} />
@@ -114,7 +140,7 @@ export function DashboardScreen({ onNavigate }: { onNavigate: NavigateFn }) {
       </div>
 
       {/* Recent assets */}
-      <Card p={false}>
+      <Card p={false} className="w-full">
         <div className="p-5 flex items-center justify-between border-b border-[#E5E7EB]">
           <h3 className="text-sm font-semibold text-[#2B2B2B]">آخر الأصول المضافة</h3>
           <Btn variant="ghost" size="sm" onClick={() => onNavigate("assets")}>عرض الكل</Btn>
@@ -129,10 +155,10 @@ export function DashboardScreen({ onNavigate }: { onNavigate: NavigateFn }) {
               </tr>
             </thead>
             <tbody>
-              {ASSETS.slice(0, 5).map((a, i) => (
+              {recentAssets.map((a, i) => (
                 <tr key={a.id}
-                  className={`hover:bg-[#FAFAF9] transition-colors cursor-pointer ${i < 4 ? "border-b border-[#F7F6F3]" : ""}`}
-                  onClick={() => onNavigate("asset-detail")}>
+                  className={`hover:bg-[#FAFAF9] transition-colors cursor-pointer ${i < recentAssets.length - 1 ? "border-b border-[#F7F6F3]" : ""}`}
+                  onClick={() => onOpenAsset(a.id, "asset-detail")}>
                   <td className="px-5 py-3.5 font-mono text-xs text-[#3D4589] font-medium">{a.id}</td>
                   <td className="px-5 py-3.5 text-[#2B2B2B] font-medium">{a.name}</td>
                   <td className="px-5 py-3.5 text-[#6B7280]">{a.department}</td>
@@ -154,6 +180,7 @@ export function DashboardScreen({ onNavigate }: { onNavigate: NavigateFn }) {
           { label: "التقارير",    icon: BarChart3,       screen: "reports"     as Screen },
         ] as Array<{ label: string; icon: ElementType; screen: Screen }>)
           .filter(a => {
+            if (a.screen === "reports") return hasReportsAccess(currentUser);
             const perm = SCREEN_PERMISSIONS[a.screen];
             return !perm || hasPermission(currentUser, perm);
           })

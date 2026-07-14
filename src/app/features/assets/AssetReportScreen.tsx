@@ -3,8 +3,12 @@ import {
   ArrowLeftRight, Wrench, FileText, Shield, BookOpen, Image as ImageIcon, Cpu,
 } from "lucide-react";
 import type { NavigateFn } from "../../types";
-import { ASSETS, ASSET_HISTORY } from "../../data/mock";
-import { Btn, Card, Chip, CriticalityChip, QrCodeGraphic } from "../../components/shared";
+import { ASSET_HISTORY } from "../../data/mock";
+import { Btn, Card, Chip, CriticalityChip, QrCodeGraphic, AccessDenied, toast } from "../../components/shared";
+import { useAuth } from "../../auth";
+import { getVisibleAssetsForUser } from "../../utils/assetScope";
+import { useAssetsData } from "./contexts/AssetsDataContext";
+import { getAssetAssigneeName } from "../../utils/userDisplay";
 import { formatDateTime } from "../../utils/date";
 
 // ─────────────────────────────────────────────
@@ -19,7 +23,15 @@ const DOCUMENT_PLACEHOLDERS = [
 ];
 
 export function AssetReportScreen({ assetId, onNavigate }: { assetId: string | null; onNavigate: NavigateFn }) {
-  const asset = ASSETS.find(a => a.id === assetId) ?? ASSETS[0];
+  const { currentUser } = useAuth();
+  const { assets } = useAssetsData();
+  const visibleAssets = getVisibleAssetsForUser(assets, currentUser);
+  const asset = visibleAssets.find(a => a.id === assetId);
+
+  if (!asset) {
+    return <AccessDenied onBack={() => onNavigate("assets")} />;
+  }
+  const assigneeName = getAssetAssigneeName(asset) || "—";
   const history = ASSET_HISTORY.filter(h => h.assetId === asset.id);
 
   const byNewest = (a: { timestamp: string }, b: { timestamp: string }) =>
@@ -37,7 +49,7 @@ export function AssetReportScreen({ assetId, onNavigate }: { assetId: string | n
     { label: "نوع الأصل",               value: asset.type },
     { label: "القسم",                   value: asset.department },
     { label: "الموقع",                  value: asset.location },
-    { label: "المالك الحالي",           value: asset.assignedTo || "—" },
+    { label: "المالك الحالي",           value: assigneeName },
     { label: "الرقم التسلسلي",          value: asset.serial,                  mono: true },
     { label: "الموديل",                 value: asset.model },
     { label: "الشركة المصنّعة",         value: asset.manufacturer },
@@ -50,7 +62,7 @@ export function AssetReportScreen({ assetId, onNavigate }: { assetId: string | n
 
   const lifecycleStats = [
     { label: "تاريخ الإنشاء",        value: formatDateTime(dateCreated).date, icon: Calendar,       bg: "#EDF3EF", color: "#3D6B47" },
-    { label: "المالك الحالي",        value: asset.assignedTo || "—",          icon: User,           bg: "#EEF0F8", color: "#2A3172" },
+    { label: "المالك الحالي",        value: assigneeName,                   icon: User,           bg: "#EEF0F8", color: "#2A3172" },
     { label: "إجمالي عمليات النقل",  value: String(transfers.length),         icon: ArrowLeftRight, bg: "#EEF0F8", color: "#2A3172" },
     { label: "عدد أعمال الصيانة",    value: String(maintenances.length),      icon: Wrench,         bg: "#FDF6ED", color: "#8B6914" },
     { label: "الموقع الحالي",        value: asset.location,                   icon: MapPin,         bg: "#FDF6ED", color: "#8B6914" },
@@ -70,14 +82,12 @@ export function AssetReportScreen({ assetId, onNavigate }: { assetId: string | n
         </div>
         <div className="flex items-center gap-2">
           <Btn variant="secondary" size="sm" icon={<Printer size={13} />} onClick={() => window.print()}>طباعة</Btn>
-          <span title="قريباً">
-            <Btn variant="secondary" size="sm" icon={<FileDown size={13} />} disabled>تصدير PDF</Btn>
-          </span>
+          <Btn variant="secondary" size="sm" icon={<FileDown size={13} />} onClick={() => toast.deferred("تصدير التقرير كملف PDF")}>تصدير PDF</Btn>
         </div>
       </div>
 
       {/* 1. Header */}
-      <Card className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+      <Card className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 asset-report-section">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-xl bg-[#EEF0F8] flex items-center justify-center flex-shrink-0">
             <Cpu size={22} className="text-[#2A3172]" />
@@ -91,12 +101,12 @@ export function AssetReportScreen({ assetId, onNavigate }: { assetId: string | n
             <p className="text-sm text-[#6B7280] font-mono">{asset.id}</p>
             <div className="flex items-center gap-4 mt-2 text-xs text-[#6B7280] flex-wrap">
               <span className="flex items-center gap-1"><Building2 size={12} />{asset.department}</span>
-              <span className="flex items-center gap-1"><User size={12} />{asset.assignedTo || "بدون مسؤول حالي"}</span>
+              <span className="flex items-center gap-1"><User size={12} />{assigneeName === "—" ? "بدون مسؤول حالي" : assigneeName}</span>
             </div>
           </div>
         </div>
         <div className="w-24 h-24 bg-white border border-[#E5E7EB] rounded-xl p-2.5 flex-shrink-0">
-          <QrCodeGraphic className="w-full h-full" />
+          <QrCodeGraphic assetId={asset.id} className="w-full h-full" />
         </div>
       </Card>
 
@@ -230,7 +240,7 @@ export function AssetReportScreen({ assetId, onNavigate }: { assetId: string | n
       {/* 7. Footer */}
       <div className="text-center text-xs text-[#6B7280] pt-5 border-t border-[#E5E7EB] space-y-1">
         <p>تاريخ إنشاء التقرير: <span className="font-mono">{generated.date} · {generated.time}</span></p>
-        <p>أُنشئ بواسطة: محمد العتيبي · رقم الأصل: <span className="font-mono">{asset.id}</span></p>
+        <p>أُنشئ بواسطة: {currentUser?.name ?? "—"} · رقم الأصل: <span className="font-mono">{asset.id}</span></p>
         <p>نظام حصر الأصول — تقرير مُولّد آلياً · الإصدار 2.4.1</p>
       </div>
     </div>

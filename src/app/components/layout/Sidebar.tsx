@@ -1,10 +1,11 @@
-import type { ElementType } from "react";
+import { useState, type ElementType } from "react";
 import {
   LayoutDashboard, Package, ArrowLeftRight, QrCode, ClipboardList, BarChart3,
-  Users, Shield, Bell, Settings, LogOut, Bot, History, Menu,
+  Users, Shield, Bell, Settings, LogOut, Bot, History, Menu, UserCircle,
 } from "lucide-react";
 import type { Screen } from "../../types";
-import { useAuth, hasPermission, ROLE_LABELS, SCREEN_PERMISSIONS } from "../../auth";
+import { useAuth, hasPermission, hasReportsAccess, ROLE_LABELS, SCREEN_PERMISSIONS } from "../../auth";
+import { ConfirmDialog } from "../shared";
 
 const NAV_ITEMS: Array<{ id?: Screen; label: string; icon?: ElementType }> = [
   { id: "dashboard",       label: "لوحة التحكم",        icon: LayoutDashboard },
@@ -22,10 +23,17 @@ const NAV_ITEMS: Array<{ id?: Screen; label: string; icon?: ElementType }> = [
 ];
 
 const BTM_NAV: Array<{ id: Screen; label: string; icon: ElementType }> = [
-  { id: "ai-assistant",  label: "المساعد الذكي", icon: Bot      },
-  { id: "notifications", label: "الإشعارات",     icon: Bell     },
-  { id: "settings",      label: "الإعدادات",     icon: Settings },
+  { id: "ai-assistant",  label: "المساعد الذكي", icon: Bot        },
+  { id: "notifications", label: "الإشعارات",     icon: Bell       },
+  { id: "profile",       label: "الملف الشخصي",  icon: UserCircle },
+  { id: "settings",      label: "الإعدادات",     icon: Settings   },
 ];
+
+function canAccessNavItem(screen: Screen, user: ReturnType<typeof useAuth>["currentUser"]): boolean {
+  if (screen === "reports") return hasReportsAccess(user);
+  const perm = SCREEN_PERMISSIONS[screen];
+  return !perm || hasPermission(user, perm);
+}
 
 // Drop any section header left with no visible items before the next header/end.
 function pruneEmptyHeaders<T extends { id?: Screen }>(items: T[]): T[] {
@@ -40,17 +48,11 @@ export function Sidebar({ screen, onNavigate, collapsed, onToggle, onLogout }: {
   onLogout: () => void;
 }) {
   const { currentUser } = useAuth();
+  const [confirmLogout, setConfirmLogout] = useState(false);
   const visibleNavItems = pruneEmptyHeaders(
-    NAV_ITEMS.filter(item => {
-      if (!item.id) return true;
-      const perm = SCREEN_PERMISSIONS[item.id];
-      return !perm || hasPermission(currentUser, perm);
-    })
+    NAV_ITEMS.filter(item => !item.id || canAccessNavItem(item.id, currentUser))
   );
-  const visibleBtmNav = BTM_NAV.filter(item => {
-    const perm = SCREEN_PERMISSIONS[item.id];
-    return !perm || hasPermission(currentUser, perm);
-  });
+  const visibleBtmNav = BTM_NAV.filter(item => canAccessNavItem(item.id, currentUser));
 
   return (
     <aside className="flex flex-col h-full flex-shrink-0 transition-all duration-300 overflow-hidden print:hidden"
@@ -128,13 +130,13 @@ export function Sidebar({ screen, onNavigate, collapsed, onToggle, onLogout }: {
           </div>
           {!collapsed && (
             <>
-              <div className="flex-1 min-w-0">
+              <button type="button" onClick={() => onNavigate("profile")} className="flex-1 min-w-0 text-right cursor-pointer">
                 <p className="text-xs font-semibold text-[#FFFFFF] truncate">{currentUser?.name}</p>
                 <p className="text-[10px] truncate" style={{ color: "#A0A8C0" }}>
                   {currentUser && ROLE_LABELS[currentUser.role]}
                 </p>
-              </div>
-              <button onClick={onLogout} title="تسجيل الخروج" className="flex-shrink-0 cursor-pointer" style={{ color: "#A0A8C0" }}
+              </button>
+              <button onClick={() => setConfirmLogout(true)} title="تسجيل الخروج" className="flex-shrink-0 cursor-pointer" style={{ color: "#A0A8C0" }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#FFFFFF"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#A0A8C0"; }}>
                 <LogOut size={13} />
@@ -143,7 +145,16 @@ export function Sidebar({ screen, onNavigate, collapsed, onToggle, onLogout }: {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmLogout}
+        onOpenChange={setConfirmLogout}
+        title="تسجيل الخروج"
+        description="هل أنت متأكد من تسجيل الخروج من النظام؟"
+        confirmLabel="تسجيل الخروج"
+        variant="danger"
+        onConfirm={() => { setConfirmLogout(false); onLogout(); }}
+      />
     </aside>
   );
 }
-

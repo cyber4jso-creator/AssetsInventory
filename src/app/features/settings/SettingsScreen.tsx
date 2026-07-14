@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Settings2, Table2, FormInput } from "lucide-react";
 import { useAuth, hasPermission } from "../../auth";
-import { Card } from "../../components/shared";
+import { Card, toast } from "../../components/shared";
 import { TableColumnsSettings } from "./TableColumnsSettings";
 import { CustomFieldsSettings } from "./CustomFieldsSettings";
 
@@ -19,7 +19,14 @@ export function SettingsScreen() {
   const [pushNotif,  setPush]     = useState(false);
   const [twoFA,      setTwoFA]    = useState(true);
   const [sessionTTL, setSession]  = useState("30");
+  const [language,   setLanguage] = useState("ar");
+  const [timezone,   setTimezone] = useState("GMT+3");
   const [tab, setTab]             = useState<SettingsTab>("general");
+
+  const handleLanguageChange = (value: string) => {
+    setLanguage(value);
+    if (value !== "ar") toast.deferred("تبديل لغة الواجهة الكاملة");
+  };
 
   const Toggle = ({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) => (
     <button onClick={() => onChange(!value)}
@@ -37,7 +44,9 @@ export function SettingsScreen() {
         {
           label: "لغة الواجهة", desc: "اختر اللغة المفضلة لعرض النظام",
           control: (
-            <select className="text-sm px-3 py-1.5 rounded-lg border border-[#E5E7EB] bg-white focus:outline-none appearance-none cursor-pointer">
+            <select
+              value={language} onChange={e => handleLanguageChange(e.target.value)}
+              className="text-sm px-3 py-1.5 rounded-lg border border-[#E5E7EB] bg-white focus:outline-none appearance-none cursor-pointer">
               <option value="ar">العربية</option>
               <option value="en">English</option>
             </select>
@@ -46,8 +55,10 @@ export function SettingsScreen() {
         {
           label: "المنطقة الزمنية", desc: "التوقيت الرسمي للمملكة العربية السعودية",
           control: (
-            <select className="text-sm px-3 py-1.5 rounded-lg border border-[#E5E7EB] bg-white focus:outline-none appearance-none cursor-pointer">
-              <option>GMT+3 — الرياض</option>
+            <select
+              value={timezone} onChange={e => setTimezone(e.target.value)}
+              className="text-sm px-3 py-1.5 rounded-lg border border-[#E5E7EB] bg-white focus:outline-none appearance-none cursor-pointer">
+              <option value="GMT+3">GMT+3 — الرياض</option>
             </select>
           ),
         },
@@ -89,7 +100,7 @@ export function SettingsScreen() {
   const visibleTabs = isSuperAdmin ? adminTabs : adminTabs.filter(t => t.id === "general");
 
   return (
-    <div className="space-y-5 max-w-2xl">
+    <div className="space-y-5 w-full">
       <h1 className="text-2xl font-bold text-[#2B2B2B]">الإعدادات</h1>
 
       {isSuperAdmin && (

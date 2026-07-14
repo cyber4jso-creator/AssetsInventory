@@ -1,8 +1,12 @@
 # شجرة المشروع — Feature-Driven Architecture
-> تاريخ التحديث: 2026-07-06
+> تاريخ التحديث: 2026-07-14 · Sprint 1 complete
 
 ```
 Optimize for Usability and Scalability/
+├── docs/
+│   ├── SPRINT_ROADMAP.md
+│   ├── SPRINT_1_COMPLETION_REPORT.md
+│   └── SPRINT_1_ADDENDUM_REPORT.md
 ├── index.html
 ├── package.json
 ├── vite.config.ts
@@ -10,11 +14,15 @@ Optimize for Usability and Scalability/
 └── src/
     ├── main.tsx
     ├── app/
-    │   ├── App.tsx                          # Shell: routing + layout (~77 سطر)
-    │   ├── types/
-    │   │   └── index.ts                     # Screen, AssetStatus, NavigateFn
+    │   ├── App.tsx
+    │   ├── auth/
+    │   │   ├── scope/              # Data scope contract (Sprint 3 APIs)
+    │   │   └── ...
     │   ├── data/
-    │   │   └── mock.ts                      # بيانات تجريبية مشتركة
+    │   │   ├── demoUsers.ts        # Demo users — single source of truth
+    │   │   ├── mockReferenceDate.ts
+    │   │   ├── dashboardStats.ts
+    │   │   └── mock.ts
     │   ├── components/
     │   │   ├── layout/
     │   │   │   ├── Sidebar.tsx
