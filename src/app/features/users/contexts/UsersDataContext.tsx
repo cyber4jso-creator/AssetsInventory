@@ -1,17 +1,24 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
+﻿import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import type { Role } from "../../../auth";
 import { ROLE_LABELS } from "../../../auth";
-import { USERS as INITIAL_USERS } from "../../../data/mock";
 import { getDepartmentById } from "../../../data/orgConstants";
-
-// ─────────────────────────────────────────────
-// Users data — local mock state for Sprint 2.
-// In-memory only, no persistence across refresh.
-// Sprint 3 replaces this with scoped API calls.
-// ─────────────────────────────────────────────
+import {
+  createUser as createApiUser,
+  fetchUsers,
+  updateUserStatus as updateApiUserStatus,
+} from "../services/usersApiService";
+import { mapApiUserToUserRecord } from "../mappers/user.mapper";
 
 export interface UserRecord {
   id: number;
+  apiId: string;
   name: string;
   email: string;
   role: string;
@@ -30,51 +37,138 @@ export interface NewUserInput {
 
 interface UsersDataContextValue {
   users: UserRecord[];
+  loading: boolean;
+  error: string | null;
+  refreshUsers: () => Promise<void>;
   isDuplicateEmail: (email: string) => boolean;
-  addUser: (input: NewUserInput) => UserRecord;
-  toggleUserStatus: (id: number) => void;
+  addUser: (input: NewUserInput) => Promise<UserRecord>;
+  toggleUserStatus: (id: number) => Promise<void>;
 }
+
+const ROLE_IDS: Record<Role, number> = {
+  "super-admin": 9,
+  employee: 10,
+  "department-manager": 11,
+  "sector-manager": 12,
+  "asset-manager": 13,
+  auditor: 14,
+};
 
 const UsersDataContext = createContext<UsersDataContextValue | null>(null);
 
 export function UsersDataProvider({ children }: { children: ReactNode }) {
-  const [users, setUsers] = useState<UserRecord[]>(INITIAL_USERS);
+  const [users, setUsers] = useState<UserRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const isDuplicateEmail = useCallback((email: string) => {
-    const normalized = email.trim().toLowerCase();
-    return users.some(u => u.email.toLowerCase() === normalized);
-  }, [users]);
+  const refreshUsers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-  const addUser = useCallback((input: NewUserInput): UserRecord => {
-    let created!: UserRecord;
-    setUsers(prev => {
-      created = {
-        id: (prev.length > 0 ? prev[prev.length - 1].id : 0) + 1,
-        name: input.firstName,
+    try {
+      const apiUsers = await fetchUsers();
+      setUsers(apiUsers.map(mapApiUserToUserRecord));
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error
+          ? requestError.message
+          : "فشل تحميل المستخدمين";
+
+      setError(message);
+      console.error("Users API error:", requestError);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshUsers();
+  }, [refreshUsers]);
+
+  const isDuplicateEmail = useCallback(
+    (email: string) => {
+      const normalized = email.trim().toLowerCase();
+      return users.some(
+        (user) => user.email.toLowerCase() === normalized,
+      );
+    },
+    [users],
+  );
+
+  const addUser = useCallback(
+    async (input: NewUserInput): Promise<UserRecord> => {
+      const departmentName =
+        getDepartmentById(input.departmentId)?.name ??
+        input.departmentId;
+
+      const apiUser = await createApiUser({
+        fullName: input.firstName,
         email: input.email,
-        role: ROLE_LABELS[input.role],
-        department: getDepartmentById(input.departmentId)?.name ?? "",
-        status: input.status,
-        lastLogin: "—",
-      };
-      return [...prev, created];
-    });
-    return created;
-  }, []);
+        roleId: ROLE_IDS[input.role],
+        departmentId: departmentName,
+        status: input.status === "active" ? "Active" : "Inactive",
+      });
 
-  const toggleUserStatus = useCallback((id: number) => {
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, status: u.status === "active" ? "inactive" : "active" } : u));
-  }, []);
+      const created = mapApiUserToUserRecord(apiUser);
+
+      setUsers((previous) => [...previous, created]);
+      return created;
+    },
+    [],
+  );
+
+  const toggleUserStatus = useCallback(
+    async (id: number): Promise<void> => {
+      const currentUser = users.find((user) => user.id === id);
+
+      if (!currentUser) {
+        throw new Error("المستخدم غير موجود");
+      }
+
+      const nextStatus =
+        currentUser.status === "active" ? "Inactive" : "Active";
+
+      const updatedApiUser = await updateApiUserStatus(
+        currentUser.apiId,
+        nextStatus,
+      );
+
+      const updatedUser = mapApiUserToUserRecord(updatedApiUser);
+
+      setUsers((previous) =>
+        previous.map((user) =>
+          user.apiId === updatedUser.apiId ? updatedUser : user,
+        ),
+      );
+    },
+    [users],
+  );
 
   return (
-    <UsersDataContext.Provider value={{ users, isDuplicateEmail, addUser, toggleUserStatus }}>
+    <UsersDataContext.Provider
+      value={{
+        users,
+        loading,
+        error,
+        refreshUsers,
+        isDuplicateEmail,
+        addUser,
+        toggleUserStatus,
+      }}
+    >
       {children}
     </UsersDataContext.Provider>
   );
 }
 
 export function useUsersData() {
-  const ctx = useContext(UsersDataContext);
-  if (!ctx) throw new Error("useUsersData must be used inside UsersDataProvider");
-  return ctx;
+  const context = useContext(UsersDataContext);
+
+  if (!context) {
+    throw new Error(
+      "useUsersData must be used inside UsersDataProvider",
+    );
+  }
+
+  return context;
 }
