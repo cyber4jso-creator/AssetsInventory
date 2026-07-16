@@ -9,16 +9,63 @@ import { useAssetsData } from "../assets/contexts/AssetsDataContext";
 import { exportToCsv } from "../../utils/csvExport";
 import { formatDateTime } from "../../utils/date";
 import { matchesQuery } from "../../utils/search";
+import type { Asset } from "../../types";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const WARRANTY_WINDOW_DAYS = 90;
 
 const REPORT_DEFS = [
-  { id: "inventory", title: "تقرير الجرد السنوي", desc: "قائمة بالأصول ضمن نطاق صلاحياتك مع حالتها وقيمتها", icon: FileText, lastRun: "15 يونيو 2024" },
-  { id: "movement", title: "تقرير حركة الأصول", desc: "سجل عمليات النقل والتحويل خلال الفترة المحددة مع تفاصيل الموافقة", icon: ArrowLeftRight, lastRun: "10 يونيو 2024" },
-  { id: "warranty", title: "تقرير الأصول منتهية الضمان", desc: "الأصول التي انتهى أو يوشك ضمانها على الانتهاء خلال 90 يوماً", icon: AlertTriangle, lastRun: "1 يونيو 2024" },
+  {
+    id: "inventory",
+    title: "تقرير الجرد السنوي",
+    desc: "قائمة بالأصول ضمن نطاق صلاحياتك مع حالتها وقيمتها",
+    icon: FileText,
+    lastRun: "لم يُشغّل بعد",
+  },
+  {
+    id: "movement",
+    title: "تقرير حركة الأصول",
+    desc: "يتطلب اتصال واجهة برمجة سجل حركة الأصول — غير متاح حالياً",
+    icon: ArrowLeftRight,
+    lastRun: "لم يُشغّل بعد",
+  },
+  {
+    id: "warranty",
+    title: "تقرير الأصول منتهية الضمان",
+    desc: "الأصول التي انتهى أو يوشك ضمانها على الانتهاء خلال 90 يوماً",
+    icon: AlertTriangle,
+    lastRun: "لم يُشغّل بعد",
+  },
 ];
+
+function isValidWarrantyDate(value: string): boolean {
+  if (!value.trim()) return false;
+  const parsed = new Date(value);
+  return !Number.isNaN(parsed.getTime());
+}
+
+function warrantyStatusLabel(expiration: string): string {
+  const daysLeft = (new Date(expiration).getTime() - Date.now()) / DAY_MS;
+  if (daysLeft < 0) return "منتهي";
+  return "قريب الانتهاء";
+}
+
+function getReportDescription(id: string, scopedCount: number, warrantyCount: number): string {
+  if (id === "inventory") {
+    return `قائمة بـ ${scopedCount} أصل ضمن نطاق صلاحياتك مع حالتها وقيمتها`;
+  }
+  if (id === "warranty") {
+    return `${warrantyCount} أصل انتهى أو يوشك ضمانها على الانتهاء خلال 90 يوماً`;
+  }
+  if (id === "movement") {
+    return "يتطلب اتصال واجهة برمجة سجل حركة الأصول — غير متاح حالياً";
+  }
+  return "";
+}
 
 export function ReportsScreen() {
   const { currentUser } = useAuth();
-  const { assets } = useAssetsData();
+  const { assets, loading, error, refreshAssets } = useAssetsData();
   const canExport = hasReportsExport(currentUser);
   const canManageSettings = hasPermission(currentUser, "settings.manage");
   const [search, setSearch] = useState("");
@@ -26,33 +73,94 @@ export function ReportsScreen() {
     () => Object.fromEntries(REPORT_DEFS.map(r => [r.id, r.lastRun])),
   );
 
-  const scopedAssets = useMemo(
-    () => getVisibleAssetsForUser(assets, currentUser),
-    [assets, currentUser],
-  );
+  const scopedAssets = useMemo(() => {
+    if (loading || error) return [];
+    return getVisibleAssetsForUser(assets, currentUser);
+  }, [assets, currentUser, loading, error]);
+
+  const warrantyAssets = useMemo(() => {
+    const cutoff = Date.now() + WARRANTY_WINDOW_DAYS * DAY_MS;
+
+    return scopedAssets
+      .filter((asset) => {
+        if (!isValidWarrantyDate(asset.warrantyExpiration)) return false;
+        return new Date(asset.warrantyExpiration).getTime() <= cutoff;
+      })
+      .sort(
+        (a, b) =>
+          new Date(a.warrantyExpiration).getTime() - new Date(b.warrantyExpiration).getTime(),
+      );
+  }, [scopedAssets]);
+
   const scopedCount = scopedAssets.length;
+  const warrantyCount = warrantyAssets.length;
 
   const filteredReports = useMemo(
     () => REPORT_DEFS.filter(r => {
-      const desc = r.id === "inventory" ? `قائمة بـ ${scopedCount} أصل ضمن نطاق صلاحياتك` : r.desc;
+      const desc = getReportDescription(r.id, scopedCount, warrantyCount);
       return matchesQuery(search, r.title, desc, r.id);
     }),
-    [search, scopedCount],
+    [search, scopedCount, warrantyCount],
   );
 
-  const runReport = (id: string, title: string) => {
-    setLastRun(prev => ({ ...prev, [id]: formatDateTime(new Date().toISOString()).date }));
-    toast.success(`تم تشغيل "${title}"`, "البيانات محدثة الآن");
+  const exportInventoryReport = () => {
+    exportToCsv(
+      "inventory-report",
+      ["رقم الأصل", "الاسم", "الفئة", "القسم", "الموقع", "الحالة", "القيمة", "تاريخ الشراء", "انتهاء الضمان"],
+      scopedAssets.map((asset: Asset) => [
+        asset.id,
+        asset.name,
+        asset.category,
+        asset.department,
+        asset.location,
+        asset.status,
+        asset.value,
+        asset.purchaseDate,
+        asset.warrantyExpiration,
+      ]),
+    );
+    toast.success("تم تصدير تقرير الجرد بنجاح", `${scopedCount} أصل`);
   };
 
-  const exportReport = () => {
+  const exportWarrantyReport = () => {
     exportToCsv(
-      "reports-export",
-      ["رقم الأصل", "الاسم", "الفئة", "القسم", "الحالة", "القيمة", "انتهاء الضمان"],
-      scopedAssets.map(a => [a.id, a.name, a.category, a.department, a.status, a.value, a.warrantyExpiration]),
+      "warranty-report",
+      ["رقم الأصل", "الاسم", "الفئة", "القسم", "الموقع", "انتهاء الضمان", "حالة الضمان", "القيمة"],
+      warrantyAssets.map((asset: Asset) => [
+        asset.id,
+        asset.name,
+        asset.category,
+        asset.department,
+        asset.location,
+        asset.warrantyExpiration,
+        warrantyStatusLabel(asset.warrantyExpiration),
+        asset.value,
+      ]),
     );
-    toast.success("تم تصدير التقرير بنجاح");
+    toast.success("تم تصدير تقرير الضمان بنجاح", `${warrantyCount} أصل`);
   };
+
+  const runReport = (id: string, title: string) => {
+    if (loading || error) return;
+
+    if (id === "inventory") {
+      exportInventoryReport();
+      setLastRun(prev => ({ ...prev, [id]: formatDateTime(new Date().toISOString()).date }));
+      return;
+    }
+
+    if (id === "warranty") {
+      exportWarrantyReport();
+      setLastRun(prev => ({ ...prev, [id]: formatDateTime(new Date().toISOString()).date }));
+      return;
+    }
+
+    if (id === "movement") {
+      toast.deferred("تقرير حركة الأصول سيتاح بعد ربط سجل الحركة");
+    }
+  };
+
+  const dataUnavailable = loading || !!error;
 
   return (
     <div className="space-y-5 w-full">
@@ -60,10 +168,23 @@ export function ReportsScreen() {
         <div>
           <h1 className="text-2xl font-bold text-[#2B2B2B]">التقارير والتحليلات</h1>
           <p className="text-sm text-[#6B7280] mt-0.5">
-            تقارير تفاعلية — {scopedCount} أصل ضمن نطاقك · {currentUser?.name}
+            {loading
+              ? "جاري تحميل بيانات الأصول..."
+              : error
+                ? `تقارير تفاعلية — ${currentUser?.name}`
+                : `تقارير تفاعلية — ${scopedCount} أصل ضمن نطاقك · ${currentUser?.name}`}
           </p>
         </div>
-        {canExport && <Btn variant="secondary" icon={<Download size={14} />} onClick={exportReport}>تصدير تقرير</Btn>}
+        {canExport && (
+          <Btn
+            variant="secondary"
+            icon={<Download size={14} />}
+            disabled={dataUnavailable}
+            onClick={exportInventoryReport}
+          >
+            تصدير تقرير
+          </Btn>
+        )}
       </div>
 
       <div className="relative max-w-xl">
@@ -78,13 +199,29 @@ export function ReportsScreen() {
         />
       </div>
 
+      {loading && (
+        <p className="text-sm text-[#6B7280]">جاري تحميل بيانات الأصول من الخادم...</p>
+      )}
+
+      {error && !loading && (
+        <div className="flex items-center justify-between gap-3 flex-wrap p-4 rounded-lg border border-[#FAEDED] bg-[#FFF5F5]">
+          <p className="text-sm text-[#9E3A3A]">
+            تعذر تحميل بيانات الأصول من الخادم. يرجى المحاولة مرة أخرى.
+          </p>
+          <Btn variant="secondary" size="sm" icon={<RefreshCw size={13} />} onClick={() => void refreshAssets()}>
+            إعادة المحاولة
+          </Btn>
+        </div>
+      )}
+
       {filteredReports.length === 0 ? (
         <EmptyState icon={Inbox} title="لا توجد تقارير مطابقة" subtitle="جرّب تعديل كلمة البحث" />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
           {filteredReports.map(r => {
             const Icon = r.icon;
-            const desc = r.id === "inventory" ? `قائمة بـ ${scopedCount} أصل ضمن نطاق صلاحياتك مع حالتها وقيمتها` : r.desc;
+            const desc = getReportDescription(r.id, scopedCount, warrantyCount);
+            const isMovement = r.id === "movement";
             return (
               <Card key={r.id}>
                 <div className="w-10 h-10 rounded-xl bg-[#EEF0F8] flex items-center justify-center mb-3">
@@ -94,7 +231,27 @@ export function ReportsScreen() {
                 <p className="text-xs text-[#6B7280] leading-relaxed mb-4">{desc}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-[#6B7280]">آخر تشغيل: {lastRun[r.id]}</span>
-                  {canExport && <Btn variant="ghost" size="sm" onClick={() => runReport(r.id, r.title)}>تشغيل</Btn>}
+                  {canExport && (
+                    isMovement ? (
+                      <Btn
+                        variant="ghost"
+                        size="sm"
+                        className="opacity-50"
+                        onClick={() => toast.deferred("تقرير حركة الأصول سيتاح بعد ربط سجل الحركة")}
+                      >
+                        تشغيل
+                      </Btn>
+                    ) : (
+                      <Btn
+                        variant="ghost"
+                        size="sm"
+                        disabled={dataUnavailable}
+                        onClick={() => runReport(r.id, r.title)}
+                      >
+                        تشغيل
+                      </Btn>
+                    )
+                  )}
                 </div>
               </Card>
             );

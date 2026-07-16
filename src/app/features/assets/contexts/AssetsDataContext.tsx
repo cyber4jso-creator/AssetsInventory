@@ -1,15 +1,16 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
+﻿import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import type { Asset, BusinessCriticality } from "../../../types";
 import { ASSETS as INITIAL_ASSETS } from "../../../data/mock";
 import { getDepartmentById } from "../../../data/orgConstants";
 import { MOCK_TODAY } from "../../../data/mockReferenceDate";
-
-// ─────────────────────────────────────────────
-// Assets data — local mock state for Sprint 2.
-// Mirrors the AssetFieldConfigProvider pattern: in-memory only,
-// no persistence across refresh. Sprint 3 replaces this with
-// scoped API calls (see auth/scope).
-// ─────────────────────────────────────────────
+import { fetchAllAssets } from "../services/assetsApiService";
 
 export interface NewAssetInput {
   name: string;
@@ -28,6 +29,9 @@ export interface NewAssetInput {
 
 interface AssetsDataContextValue {
   assets: Asset[];
+  loading: boolean;
+  error: string | null;
+  refreshAssets: () => Promise<void>;
   addAsset: (input: NewAssetInput) => Asset;
   updateAsset: (id: string, input: NewAssetInput) => void;
   archiveAsset: (id: string) => void;
@@ -44,6 +48,7 @@ function nextAssetId(existing: Asset[]): string {
 
 function toAssetFields(input: NewAssetInput) {
   const dept = getDepartmentById(input.departmentId);
+
   return {
     name: input.name,
     serial: input.serial,
@@ -66,41 +71,101 @@ function toAssetFields(input: NewAssetInput) {
 
 export function AssetsDataProvider({ children }: { children: ReactNode }) {
   const [assets, setAssets] = useState<Asset[]>(INITIAL_ASSETS);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refreshAssets = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const apiAssets = await fetchAllAssets();
+      setAssets(apiAssets);
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error
+          ? requestError.message
+          : "Failed to load assets";
+
+      setError(message);
+      console.error("Assets API error:", requestError);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshAssets();
+  }, [refreshAssets]);
 
   const addAsset = useCallback((input: NewAssetInput): Asset => {
     let created!: Asset;
-    setAssets(prev => {
+
+    setAssets((previous) => {
       created = {
-        id: nextAssetId(prev),
+        id: nextAssetId(previous),
         status: "active",
         ...toAssetFields(input),
       };
-      return [created, ...prev];
+
+      return [created, ...previous];
     });
+
     return created;
   }, []);
 
   const updateAsset = useCallback((id: string, input: NewAssetInput) => {
-    setAssets(prev => prev.map(a => a.id === id ? { ...a, ...toAssetFields(input) } : a));
+    setAssets((previous) =>
+      previous.map((asset) =>
+        asset.id === id
+          ? { ...asset, ...toAssetFields(input) }
+          : asset,
+      ),
+    );
   }, []);
 
   const archiveAsset = useCallback((id: string) => {
-    setAssets(prev => prev.map(a => a.id === id ? { ...a, status: "inactive" } : a));
+    setAssets((previous) =>
+      previous.map((asset) =>
+        asset.id === id
+          ? { ...asset, status: "inactive" }
+          : asset,
+      ),
+    );
   }, []);
 
   const deleteAsset = useCallback((id: string) => {
-    setAssets(prev => prev.filter(a => a.id !== id));
+    setAssets((previous) =>
+      previous.filter((asset) => asset.id !== id),
+    );
   }, []);
 
   return (
-    <AssetsDataContext.Provider value={{ assets, addAsset, updateAsset, archiveAsset, deleteAsset }}>
+    <AssetsDataContext.Provider
+      value={{
+        assets,
+        loading,
+        error,
+        refreshAssets,
+        addAsset,
+        updateAsset,
+        archiveAsset,
+        deleteAsset,
+      }}
+    >
       {children}
     </AssetsDataContext.Provider>
   );
 }
 
 export function useAssetsData() {
-  const ctx = useContext(AssetsDataContext);
-  if (!ctx) throw new Error("useAssetsData must be used inside AssetsDataProvider");
-  return ctx;
+  const context = useContext(AssetsDataContext);
+
+  if (!context) {
+    throw new Error(
+      "useAssetsData must be used inside AssetsDataProvider",
+    );
+  }
+
+  return context;
 }
