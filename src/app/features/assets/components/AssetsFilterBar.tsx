@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, RotateCcw } from "lucide-react";
 import type { AuthUser } from "../../../auth/types";
 import type { Asset } from "../../../types";
+import type { UserRecord } from "../../users/contexts/UsersDataContext";
 import {
   EMPTY_ROLE_FILTERS,
   ROLE_FILTER_LABELS,
@@ -20,19 +21,21 @@ import {
 // Role-aware compact filter bar
 // ─────────────────────────────────────────────
 
-export function AssetsFilterBar({ filters, onChange, visibleAssets, currentUser }: {
+export function AssetsFilterBar({ filters, onChange, visibleAssets, currentUser, apiUsers }: {
   filters: RoleAssetFilters;
   onChange: (filters: RoleAssetFilters) => void;
   visibleAssets: Asset[];
   currentUser: AuthUser;
+  apiUsers: UserRecord[];
 }) {
-  const filterKeys = getVisibleFilterKeys(currentUser.role);
+  const filterKeys = getVisibleFilterKeys(currentUser.role, visibleAssets);
   const options = buildRoleFilterOptions(
     currentUser.role,
     visibleAssets,
     currentUser.departmentId,
     currentUser.sectorId,
     filters,
+    apiUsers,
   );
   const activeCount = countActiveRoleFilters(filters);
 
@@ -67,6 +70,7 @@ export function AssetsFilterBar({ filters, onChange, visibleAssets, currentUser 
             options={options[key]}
             selected={filters[key]}
             role={currentUser.role}
+            apiUsers={apiUsers}
             onChange={values => {
               const next = { ...filters, [key]: values };
               if (key === "sectorId") next.departmentId = [];
@@ -80,13 +84,14 @@ export function AssetsFilterBar({ filters, onChange, visibleAssets, currentUser 
   );
 }
 
-function FilterDropdown({ filterKey, label, options, selected, onChange, role }: {
+function FilterDropdown({ filterKey, label, options, selected, onChange, role, apiUsers }: {
   filterKey: RoleFilterKey;
   label: string;
   options: string[];
   selected: string[];
   onChange: (values: string[]) => void;
   role: AuthUser["role"];
+  apiUsers: UserRecord[];
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -147,7 +152,7 @@ function FilterDropdown({ filterKey, label, options, selected, onChange, role }:
                   className="w-3.5 h-3.5 rounded border-[#E5E7EB] text-[#2A3172] focus:ring-[#D0A165]/30 cursor-pointer"
                 />
                 <span className="text-xs text-[#2B2B2B] truncate">
-                  {getRoleFilterOptionLabel(filterKey, option)}
+                  {getRoleFilterOptionLabel(filterKey, option, apiUsers)}
                 </span>
               </label>
             ))

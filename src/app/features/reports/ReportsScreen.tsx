@@ -9,6 +9,7 @@ import { useAssetsData } from "../assets/contexts/AssetsDataContext";
 import { exportToCsv } from "../../utils/csvExport";
 import { formatDateTime } from "../../utils/date";
 import { matchesQuery } from "../../utils/search";
+import { getAssetCategoryDisplayLabel } from "../../utils/assetMappings";
 import type { Asset } from "../../types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -110,7 +111,7 @@ export function ReportsScreen() {
       scopedAssets.map((asset: Asset) => [
         asset.id,
         asset.name,
-        asset.category,
+        getAssetCategoryDisplayLabel(asset),
         asset.department,
         asset.location,
         asset.status,
@@ -129,7 +130,7 @@ export function ReportsScreen() {
       warrantyAssets.map((asset: Asset) => [
         asset.id,
         asset.name,
-        asset.category,
+        getAssetCategoryDisplayLabel(asset),
         asset.department,
         asset.location,
         asset.warrantyExpiration,

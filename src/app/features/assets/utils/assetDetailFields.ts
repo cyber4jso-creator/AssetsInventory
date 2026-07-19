@@ -1,6 +1,7 @@
 import type { Asset } from "../../../types";
 import { ASSET_HISTORY } from "../../../data/mock";
 import { formatDateTime } from "../../../utils/date";
+import { getAssetSource, getAssetCategoryDisplayLabel } from "../../../utils/assetMappings";
 import { getAssetLastUpdated } from "./assetExplorer";
 import { getAssetAssigneeName } from "../../../utils/userDisplay";
 import { getWarrantyStatus } from "../../../utils/warranty";
@@ -23,10 +24,8 @@ function optionalField(asset: Asset, key: string): string {
 }
 
 export function resolveDetailCategoryType(asset: Asset): DetailCategoryType {
-  if (asset.category === "أجهزة خوادم") return "network";
-  if (["أجهزة حاسوب", "أجهزة طباعة", "أجهزة عرض", "أجهزة مسح", "أجهزة تكييف"].includes(asset.category)) {
-    return "system";
-  }
+  const source = getAssetSource(asset);
+  if (source) return source;
   return "general";
 }
 
@@ -52,7 +51,7 @@ export function getGeneralInfoFields(asset: Asset): DetailField[] {
   return [
     field("رقم الأصل", asset.id, true),
     field("الاسم", asset.name),
-    field("الفئة", asset.category),
+    field("الفئة", getAssetCategoryDisplayLabel(asset)),
     field("القسم", asset.department),
     field("المسؤول", getAssetAssigneeName(asset)),
     field("المورّد", vendor),

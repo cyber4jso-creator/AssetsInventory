@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import type { NavigateFn, Screen } from "../../types";
 import { ASSET_HISTORY, ASSET_ATTACHMENTS, AUDIT_LOGS } from "../../data/mock";
+import { getAssetCategoryDisplayLabel } from "../../utils/assetMappings";
 import { Btn, Card, Chip, CriticalityChip, AccessDenied, ConfirmDialog, toast } from "../../components/shared";
 import { useAuth, hasPermission, hasReportsExport } from "../../auth";
 import { getVisibleAssetsForUser } from "../../utils/assetScope";
@@ -84,7 +85,7 @@ export function AssetDetailScreen({ onNavigate, onOpenAsset, assetId }: {
       `asset-${asset.id}`,
       ["الحقل", "القيمة"],
       [
-        ["رقم الأصل", asset.id], ["الاسم", asset.name], ["الفئة", asset.category],
+        ["رقم الأصل", asset.id], ["الاسم", asset.name], ["الفئة", getAssetCategoryDisplayLabel(asset)],
         ["القسم", asset.department], ["الموقع", asset.location], ["الحالة", asset.status],
         ["الرقم التسلسلي", asset.serial], ["الموديل", asset.model], ["الشركة المصنّعة", asset.manufacturer],
         ["تاريخ الشراء", asset.purchaseDate], ["انتهاء الضمان", asset.warrantyExpiration], ["القيمة", asset.value],
@@ -128,7 +129,7 @@ export function AssetDetailScreen({ onNavigate, onOpenAsset, assetId }: {
               <Chip status={asset.status} />
               <CriticalityChip criticality={asset.businessCriticality} />
             </div>
-            <p className="text-sm text-[#6B7280] font-mono">{asset.id} · {asset.category}</p>
+            <p className="text-sm text-[#6B7280] font-mono">{asset.id} · {getAssetCategoryDisplayLabel(asset)}</p>
             <div className="flex items-center gap-4 mt-2 text-xs text-[#6B7280] flex-wrap">
               {asset.location && (
                 <span className="flex items-center gap-1"><MapPin size={12} />{asset.location}</span>

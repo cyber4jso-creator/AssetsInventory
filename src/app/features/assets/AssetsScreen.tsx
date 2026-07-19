@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Search, Plus, Upload, Download, ListChecks, X,
+  Search, Plus, Upload, Download, ListChecks, X, RefreshCw,
 } from "lucide-react";
 import type { Asset, Screen } from "../../types";
 import { Btn, Card, Skeleton, PaginationBar, toast } from "../../components/shared";
 import { useAuth, hasPermission, hasReportsExport } from "../../auth";
 import { getVisibleAssetsForUser } from "../../utils/assetScope";
+import { getAssetCategoryDisplayLabel } from "../../utils/assetMappings";
 import { exportToCsv } from "../../utils/csvExport";
 import { useAssetsData } from "./contexts/AssetsDataContext";
+import { useUsersData } from "../users/contexts/UsersDataContext";
 import { AssetsFilterBar } from "./components/AssetsFilterBar";
 import { CategoryTabs } from "./components/CategoryTabs";
 import {
@@ -22,6 +24,7 @@ import { getTotalPages } from "../../utils/paginate";
 import { AssetsTable } from "./AssetsTable";
 import { AssetDetailsPanel } from "./AssetDetailsPanel";
 import { ColumnVisibilityPopover } from "./ColumnVisibilityPopover";
+import { buildUserNameLookup } from "../../utils/userDisplay";
 
 // ─────────────────────────────────────────────
 // Assets Management — Enterprise Asset Explorer
@@ -43,7 +46,6 @@ export function AssetsScreen({ onOpenAsset, initialSearch }: {
   onOpenAsset: (assetId: string | null, screen: Screen) => void;
   initialSearch?: string;
 }) {
-  const [loading, setLoading]               = useState(true);
   const [search, setSearch]                 = useState(initialSearch ?? "");
   const [activeTab, setActiveTab]           = useState<ExplorerTabId>("all");
   const [filters, setFilters]               = useState<RoleAssetFilters>(EMPTY_ROLE_FILTERS);
@@ -54,17 +56,15 @@ export function AssetsScreen({ onOpenAsset, initialSearch }: {
   const [sortAsc, setSortAsc]               = useState(true);
 
   const { currentUser } = useAuth();
-  const { assets } = useAssetsData();
+  const { assets, loading, error, refreshAssets } = useAssetsData();
+  const { users: apiUsers } = useUsersData();
+
+  const userLookup = useMemo(() => buildUserNameLookup(apiUsers), [apiUsers]);
 
   const visibleAssets = useMemo(
     () => getVisibleAssetsForUser(assets, currentUser),
     [assets, currentUser],
   );
-
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(t);
-  }, []);
 
   useEffect(() => {
     if (initialSearch) setSearch(initialSearch);
@@ -75,9 +75,9 @@ export function AssetsScreen({ onOpenAsset, initialSearch }: {
     () => visibleAssets.filter(a =>
       matchesExplorerTab(a, activeTab) &&
       matchesRoleFilters(a, filters) &&
-      matchesSearch(a, search),
+      matchesSearch(a, search, userLookup),
     ),
-    [visibleAssets, activeTab, filters, search],
+    [visibleAssets, activeTab, filters, search, userLookup],
   );
 
   const sorted = useMemo(() => {
@@ -143,12 +143,51 @@ export function AssetsScreen({ onOpenAsset, initialSearch }: {
     exportToCsv(
       "assets-export",
       ["رقم الأصل", "الاسم", "الفئة", "القسم", "الحالة", "المسؤول", "تاريخ الشراء", "القيمة"],
-      list.map(a => [a.id, a.name, a.category, a.department, a.status, a.assignedUserId ?? "", a.purchaseDate, a.value]),
+      list.map(a => [
+        a.id,
+        a.name,
+        getAssetCategoryDisplayLabel(a),
+        a.department,
+        a.status,
+        a.assignedUserId ?? "",
+        a.purchaseDate,
+        a.value,
+      ]),
     );
     toast.success("تم تصدير الملف بنجاح", `${list.length} أصل تم تصديرهم إلى CSV`);
   };
 
   if (!currentUser) return null;
+
+  if (loading) {
+    return (
+      <div className="space-y-5 w-full">
+        <h1 className="text-2xl font-bold text-[#2B2B2B]">إدارة الأصول</h1>
+        <Card p={false}>
+          <div className="p-4 space-y-3">
+            {Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-12" />)}
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-5 w-full">
+        <h1 className="text-2xl font-bold text-[#2B2B2B]">إدارة الأصول</h1>
+        <Card p={false}>
+          <div className="py-12 px-4 text-center space-y-4">
+            <p className="text-sm font-medium text-[#2B2B2B]">تعذر تحميل الأصول</p>
+            <p className="text-xs text-[#6B7280]">{error}</p>
+            <Btn variant="secondary" icon={<RefreshCw size={13} />} onClick={() => void refreshAssets()}>
+              إعادة المحاولة
+            </Btn>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5 w-full">
@@ -208,6 +247,7 @@ export function AssetsScreen({ onOpenAsset, initialSearch }: {
           onChange={updateFilters}
           visibleAssets={visibleAssets}
           currentUser={currentUser}
+          apiUsers={apiUsers}
         />
 
         {checkedIds.size > 0 && (
@@ -237,16 +277,12 @@ export function AssetsScreen({ onOpenAsset, initialSearch }: {
             </div>
           </div>
 
-          {loading ? (
-            <div className="p-4 space-y-3">
-              {Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-12" />)}
-            </div>
-          ) : (
-            <>
+          <>
               <AssetsTable
                 assets={paginated}
                 selectedId={selectedAssetId}
                 checkedIds={checkedIds}
+                userLookup={userLookup}
                 onSelect={setSelectedAssetId}
                 onOpenAsset={onOpenAsset}
                 onToggleCheck={toggleChecked}
@@ -263,7 +299,6 @@ export function AssetsScreen({ onOpenAsset, initialSearch }: {
                 onPageChange={setPage}
               />
             </>
-          )}
         </Card>
 
         <AssetDetailsPanel selectedAsset={selectedAsset} />

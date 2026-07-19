@@ -1,5 +1,6 @@
 import type { AuthUser } from "../auth/types";
 import type { Asset, AssetHistoryEvent } from "../types";
+import { getDepartmentsBySector } from "../data/orgConstants";
 import { MOCK_TODAY } from "../data/mockReferenceDate";
 import {
   buildDashboardKpis,
@@ -11,16 +12,40 @@ import {
 // The Backend must enforce object-level authorization and organizational
 // data scope when APIs are implemented.
 
+function normalizeText(value: string): string {
+  return value.trim().replace(/\s+/g, " ");
+}
+
+function assetMatchesDepartment(asset: Asset, user: AuthUser): boolean {
+  if (asset.departmentId?.trim()) {
+    return asset.departmentId === user.departmentId;
+  }
+
+  return normalizeText(asset.department) === normalizeText(user.department);
+}
+
+function assetMatchesSector(asset: Asset, user: AuthUser): boolean {
+  if (asset.sectorId?.trim()) {
+    return asset.sectorId === user.sectorId;
+  }
+
+  const sectorDepartments = new Set(
+    getDepartmentsBySector(user.sectorId).map((department) => normalizeText(department.name)),
+  );
+
+  return sectorDepartments.has(normalizeText(asset.department));
+}
+
 export function getVisibleAssetsForUser(assets: Asset[], user: AuthUser | null): Asset[] {
   if (!user) return [];
 
   switch (user.role) {
     case "employee":
-      return assets.filter(a => a.assignedUserId === user.id);
+      return assets.filter((asset) => asset.assignedUserId === user.id);
     case "department-manager":
-      return assets.filter(a => a.departmentId === user.departmentId);
+      return assets.filter((asset) => assetMatchesDepartment(asset, user));
     case "sector-manager":
-      return assets.filter(a => a.sectorId === user.sectorId);
+      return assets.filter((asset) => assetMatchesSector(asset, user));
     case "asset-manager":
     case "auditor":
       return assets;

@@ -1,6 +1,6 @@
 import type { Asset } from "../../../types";
-import { ASSET_HISTORY } from "../../../data/mock";
-import { getAssetAssigneeName } from "../../../utils/userDisplay";
+import { getAssetExplorerTabId, getAssetCategoryDisplayLabel } from "../../../utils/assetMappings";
+import { getAssetAssigneeName, type UserNameLookup } from "../../../utils/userDisplay";
 import { formatDateTime } from "../../../utils/date";
 
 // ─────────────────────────────────────────────
@@ -18,36 +18,10 @@ export const EXPLORER_TABS: { id: ExplorerTabId; label: string }[] = [
   { id: "licenses",     label: "التراخيص" },
 ];
 
-const SYSTEM_CATEGORIES = new Set([
-  "أجهزة حاسوب",
-  "أجهزة طباعة",
-  "أجهزة عرض",
-  "أجهزة مسح",
-  "أجهزة تكييف",
-]);
-
-const NETWORK_CATEGORIES = new Set(["أجهزة خوادم"]);
-const APPLICATION_CATEGORIES = new Set(["أثاث مكتبي"]);
-const CIRCUIT_CATEGORIES = new Set(["مركبات"]);
-
-const lastUpdatedByAsset = new Map<string, string>();
-
-function buildLastUpdatedIndex() {
-  if (lastUpdatedByAsset.size > 0) return;
-  for (const event of ASSET_HISTORY) {
-    const current = lastUpdatedByAsset.get(event.assetId);
-    if (!current || event.timestamp > current) {
-      lastUpdatedByAsset.set(event.assetId, event.timestamp);
-    }
-  }
-}
-
 export function getAssetExplorerTab(asset: Asset): ExplorerTabId | "other" {
-  if (NETWORK_CATEGORIES.has(asset.category)) return "networks";
-  if (SYSTEM_CATEGORIES.has(asset.category)) return "systems";
-  if (APPLICATION_CATEGORIES.has(asset.category)) return "applications";
-  if (CIRCUIT_CATEGORIES.has(asset.category)) return "circuits";
-  return "other";
+  const tabId = getAssetExplorerTabId(asset);
+  if (tabId === "other") return "other";
+  return tabId as ExplorerTabId;
 }
 
 export function matchesExplorerTab(asset: Asset, tab: ExplorerTabId): boolean {
@@ -56,10 +30,8 @@ export function matchesExplorerTab(asset: Asset, tab: ExplorerTabId): boolean {
 }
 
 export function getAssetLastUpdated(assetId: string): string {
-  buildLastUpdatedIndex();
-  const iso = lastUpdatedByAsset.get(assetId);
-  if (!iso) return "—";
-  return formatDateTime(iso).date;
+  void assetId;
+  return "—";
 }
 
 function normalize(value: string): string {
@@ -71,17 +43,25 @@ function optionalField(asset: Asset, key: "hostname" | "ipAddress"): string {
   return value?.trim() ?? "";
 }
 
-export function matchesSearch(asset: Asset, query: string): boolean {
+export function matchesSearch(
+  asset: Asset,
+  query: string,
+  userLookup?: UserNameLookup,
+): boolean {
   const q = normalize(query);
   if (!q) return true;
+
+  const categoryLabel = getAssetCategoryDisplayLabel(asset);
 
   const haystack = [
     asset.id,
     asset.name,
     asset.category,
+    categoryLabel,
+    asset.source ?? "",
     asset.manufacturer,
     asset.supplier,
-    getAssetAssigneeName(asset) ?? "",
+    getAssetAssigneeName(asset, userLookup) ?? "",
     asset.department,
     asset.serial,
     optionalField(asset, "hostname"),

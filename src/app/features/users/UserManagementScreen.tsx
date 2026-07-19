@@ -1,10 +1,14 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { Search, Plus, Edit, Ban, RotateCcw, Inbox } from "lucide-react";
 import { Btn, Card, EmptyState, ConfirmDialog, PaginationBar, toast } from "../../components/shared";
 import { ROLE_LABELS, useAuth, hasPermission } from "../../auth";
 import type { Role } from "../../auth";
-import { useUsersData } from "./contexts/UsersDataContext";
+import {
+  useUsersData,
+  type UserRecord,
+} from "./contexts/UsersDataContext";
 import { AddUserModal } from "./AddUserModal";
+import { EditUserModal } from "./EditUserModal";
 import { matchesQuery } from "../../utils/search";
 import { getTotalPages, paginateArray } from "../../utils/paginate";
 
@@ -23,13 +27,25 @@ const TABLE_HEADERS = [
 export function UserManagementScreen() {
   const { currentUser } = useAuth();
   const canManage = hasPermission(currentUser, "users.manage");
-  const { users, toggleUserStatus } = useUsersData();
+  const {
+    users,
+    loading,
+    error,
+    refreshUsers,
+    updateUserStatus,
+  } = useUsersData();
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [page, setPage] = useState(1);
   const [showAddUser, setShowAddUser] = useState(false);
-  const [statusTarget, setStatusTarget] = useState<{ id: number; name: string; nextActive: boolean } | null>(null);
+  const [editTarget, setEditTarget] = useState<UserRecord | null>(null);
+  const [statusTarget, setStatusTarget] = useState<{
+    apiId: string;
+    name: string;
+    nextActive: boolean;
+  } | null>(null);
+  const [statusUpdating, setStatusUpdating] = useState(false);
 
   const filteredUsers = useMemo(() => {
     return users.filter(u => {
@@ -42,11 +58,82 @@ export function UserManagementScreen() {
   const totalPages = getTotalPages(filteredUsers.length, PER_PAGE);
   const paginated = paginateArray(filteredUsers, page, PER_PAGE);
 
-  const confirmStatusChange = () => {
-    if (!statusTarget) return;
-    toggleUserStatus(statusTarget.id);
-    toast.success(statusTarget.nextActive ? "تم تفعيل المستخدم" : "تم تعطيل المستخدم");
-    setStatusTarget(null);
+  if (loading) {
+    return (
+      <div className="space-y-5 w-full">
+        <h1 className="text-2xl font-bold text-[#2B2B2B]">
+          إدارة المستخدمين
+        </h1>
+
+        <Card p={false}>
+          <div className="py-12 text-center text-sm text-[#6B7280]">
+            جاري تحميل المستخدمين...
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-5 w-full">
+        <h1 className="text-2xl font-bold text-[#2B2B2B]">
+          إدارة المستخدمين
+        </h1>
+
+        <Card p={false}>
+          <div className="py-12 px-4 text-center space-y-4">
+            <div>
+              <p className="text-sm font-medium text-[#2B2B2B]">
+                تعذر تحميل المستخدمين
+              </p>
+
+              <p className="mt-1 text-xs text-[#6B7280]">
+                {error}
+              </p>
+            </div>
+
+            <Btn
+              variant="secondary"
+              onClick={() => void refreshUsers()}
+            >
+              إعادة المحاولة
+            </Btn>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  const confirmStatusChange = async () => {
+    if (!statusTarget || statusUpdating) return;
+
+    setStatusUpdating(true);
+
+    try {
+      await updateUserStatus(statusTarget.apiId, {
+        status: statusTarget.nextActive ? "Active" : "Inactive",
+      });
+
+      toast.success(
+        statusTarget.nextActive
+          ? "تم تفعيل المستخدم"
+          : "تم تعطيل المستخدم",
+      );
+
+      setStatusTarget(null);
+    } catch (statusError) {
+      console.error("Update user status error:", statusError);
+
+      const message =
+        statusError instanceof Error
+          ? statusError.message
+          : "حدث خطأ غير متوقع أثناء تحديث حالة المستخدم";
+
+      toast.error("تعذر تحديث حالة المستخدم", message);
+    } finally {
+      setStatusUpdating(false);
+    }
   };
 
   return (
@@ -82,7 +169,9 @@ export function UserManagementScreen() {
             ))}
           </select>
         </div>
-        {filteredUsers.length === 0 ? (
+        {users.length === 0 ? (
+          <EmptyState icon={Inbox} title="لا يوجد مستخدمون" subtitle="لم يتم العثور على مستخدمين في النظام" />
+        ) : filteredUsers.length === 0 ? (
           <EmptyState icon={Inbox} title="لا يوجد مستخدمون مطابقون" subtitle="جرّب تعديل كلمة البحث أو الفلتر" />
         ) : (
           <>
@@ -97,7 +186,7 @@ export function UserManagementScreen() {
                 </thead>
                 <tbody>
                   {paginated.map((u, i) => (
-                    <tr key={u.id} className={`hover:bg-[#FAFAF9] ${i < paginated.length - 1 ? "border-b border-[#F7F6F3]" : ""}`}>
+                    <tr key={u.apiId} className={`hover:bg-[#FAFAF9] ${i < paginated.length - 1 ? "border-b border-[#F7F6F3]" : ""}`}>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-[#EEF0F8] flex items-center justify-center flex-shrink-0">
@@ -120,13 +209,21 @@ export function UserManagementScreen() {
                       <td className="px-5 py-3.5">
                         {canManage && (
                           <div className="flex items-center gap-1">
-                            <button type="button" onClick={() => toast.deferred("تعديل بيانات المستخدم")} aria-label="تعديل"
+                            <button type="button" onClick={() => setEditTarget(u)} aria-label="تعديل"
                               className="p-1.5 text-[#6B7280] hover:text-[#2A3172] hover:bg-[#EEF0F8] rounded-md transition-colors cursor-pointer">
                               <Edit size={14} />
                             </button>
-                            <button type="button" onClick={() => setStatusTarget({ id: u.id, name: u.name, nextActive: u.status === "inactive" })}
+                            <button
+                              type="button"
+                              disabled={statusUpdating}
+                              onClick={() => setStatusTarget({
+                                apiId: u.apiId,
+                                name: u.name,
+                                nextActive: u.status === "inactive",
+                              })}
                               aria-label={u.status === "active" ? "تعطيل" : "تفعيل"}
-                              className="p-1.5 text-[#6B7280] hover:text-[#C44D4D] hover:bg-[#FAEDED] rounded-md transition-colors cursor-pointer">
+                              className="p-1.5 text-[#6B7280] hover:text-[#C44D4D] hover:bg-[#FAEDED] rounded-md transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
                               {u.status === "active" ? <Ban size={14} /> : <RotateCcw size={14} />}
                             </button>
                           </div>
@@ -144,9 +241,19 @@ export function UserManagementScreen() {
 
       <AddUserModal open={showAddUser} onOpenChange={setShowAddUser} />
 
+      <EditUserModal
+        open={editTarget !== null}
+        user={editTarget}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditTarget(null);
+          }
+        }}
+      />
+
       <ConfirmDialog
         open={statusTarget !== null}
-        onOpenChange={open => !open && setStatusTarget(null)}
+        onOpenChange={open => !open && !statusUpdating && setStatusTarget(null)}
         title={statusTarget?.nextActive ? "تفعيل المستخدم" : "تعطيل المستخدم"}
         description={`هل تريد ${statusTarget?.nextActive ? "تفعيل" : "تعطيل"} حساب "${statusTarget?.name}"؟`}
         confirmLabel={statusTarget?.nextActive ? "تفعيل" : "تعطيل"}

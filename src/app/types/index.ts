@@ -8,8 +8,16 @@ export type AssetStatus = "active" | "maintenance" | "reserved" | "inactive" | "
 
 export type BusinessCriticality = "Critical" | "High" | "Medium" | "Low";
 
+export type AssetSource =
+  | "system"
+  | "application"
+  | "network"
+  | "circuit"
+  | "license";
+
 export interface Asset {
   id: string;
+  source?: AssetSource;
   name: string;
   category: string;
   type: string;

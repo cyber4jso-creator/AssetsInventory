@@ -8,13 +8,14 @@ import { getColumnLabel } from "./config/assetColumns";
 import type { AssetColumnId, TableColumnKey } from "./types/fieldConfig";
 import { CategoryChip } from "./components/CategoryChip";
 import { getAssetLastUpdated } from "./utils/assetExplorer";
-import { getAssetAssigneeName } from "../../utils/userDisplay";
+import { getAssetCategoryDisplayLabel } from "../../utils/assetMappings";
+import { getAssetAssigneeName, type UserNameLookup } from "../../utils/userDisplay";
 
 // ─────────────────────────────────────────────
 // Assets Table — جدول الأصول
 // ─────────────────────────────────────────────
 
-function renderCell(columnId: AssetColumnId, asset: Asset) {
+function renderCell(columnId: AssetColumnId, asset: Asset, userLookup?: UserNameLookup) {
   const warranty = WARRANTY_META[getWarrantyState(asset.warrantyExpiration)];
 
   switch (columnId) {
@@ -29,7 +30,7 @@ function renderCell(columnId: AssetColumnId, asset: Asset) {
     case "category":
       return (
         <td key={columnId} className="px-3 py-3.5">
-          <CategoryChip label={asset.category} />
+          <CategoryChip label={getAssetCategoryDisplayLabel(asset)} />
         </td>
       );
     case "department":
@@ -37,7 +38,7 @@ function renderCell(columnId: AssetColumnId, asset: Asset) {
     case "assignedTo":
       return (
         <td key={columnId} className="px-3 py-3.5 text-[#6B7280] text-xs leading-snug break-words">
-          {getAssetAssigneeName(asset) || <span className="text-[#9CA3AF]">—</span>}
+          {getAssetAssigneeName(asset, userLookup) || <span className="text-[#9CA3AF]">—</span>}
         </td>
       );
     case "status":
@@ -69,10 +70,11 @@ function renderCell(columnId: AssetColumnId, asset: Asset) {
   }
 }
 
-export function AssetsTable({ assets, selectedId, checkedIds, onSelect, onOpenAsset, onToggleCheck, onResetFilters }: {
+export function AssetsTable({ assets, selectedId, checkedIds, userLookup, onSelect, onOpenAsset, onToggleCheck, onResetFilters }: {
   assets: Asset[];
   selectedId: string | null;
   checkedIds: Set<string>;
+  userLookup?: UserNameLookup;
   onSelect: (assetId: string) => void;
   onOpenAsset: (assetId: string, screen: Screen) => void;
   onToggleCheck: (assetId: string) => void;
@@ -144,7 +146,7 @@ export function AssetsTable({ assets, selectedId, checkedIds, onSelect, onOpenAs
                       <td key={key} className="px-3 py-3.5 text-[#9CA3AF] text-xs">—</td>
                     );
                   }
-                  return renderCell(key as AssetColumnId, a);
+                  return renderCell(key as AssetColumnId, a, userLookup);
                 })}
                 <td className="px-3 py-3.5" onClick={e => e.stopPropagation()}>
                   <div className="flex items-center gap-0.5">

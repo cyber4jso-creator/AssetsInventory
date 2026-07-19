@@ -5,6 +5,7 @@ import {
 import type { NavigateFn } from "../../types";
 import { ASSET_HISTORY } from "../../data/mock";
 import { Btn, Card, Chip, CriticalityChip, QrCodeGraphic, AccessDenied, toast } from "../../components/shared";
+import { getAssetCategoryDisplayLabel } from "../../utils/assetMappings";
 import { useAuth } from "../../auth";
 import { getVisibleAssetsForUser } from "../../utils/assetScope";
 import { useAssetsData } from "./contexts/AssetsDataContext";
@@ -45,7 +46,7 @@ export function AssetReportScreen({ assetId, onNavigate }: { assetId: string | n
   const infoFields: { label: string; value?: string; mono?: boolean; criticality?: typeof asset.businessCriticality; status?: typeof asset.status }[] = [
     { label: "اسم الأصل",              value: asset.name },
     { label: "رقم الأصل",              value: asset.id,                      mono: true },
-    { label: "الفئة",                   value: asset.category },
+    { label: "الفئة",                   value: getAssetCategoryDisplayLabel(asset) },
     { label: "نوع الأصل",               value: asset.type },
     { label: "القسم",                   value: asset.department },
     { label: "الموقع",                  value: asset.location },

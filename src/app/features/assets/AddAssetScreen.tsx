@@ -2,12 +2,18 @@ import { useEffect, useState } from "react";
 import { ChevronRight, CheckCircle, Upload } from "lucide-react";
 import type { Asset, NavigateFn } from "../../types";
 import { BUSINESS_CRITICALITY_OPTIONS } from "../../data/mock";
-import { DEMO_USERS } from "../../data/demoUsers";
 import { ORG_DEPARTMENTS, getDepartmentById } from "../../data/orgConstants";
 import { Btn, Card, Inp, Sel, toast } from "../../components/shared";
 import { useAssetsData } from "./contexts/AssetsDataContext";
+import { useUsersData } from "../users/contexts/UsersDataContext";
 
-const CATEGORY_OPTIONS = ["أجهزة حاسوب","أجهزة طباعة","أجهزة عرض","أثاث مكتبي","مركبات","أجهزة خوادم","أجهزة تكييف","أجهزة مسح"];
+const CATEGORY_OPTIONS = [
+  "نظام",
+  "تطبيق",
+  "شبكة",
+  "دائرة",
+  "ترخيص",
+] as const;
 const BUILDING_OPTIONS = ["مبنى أ","مبنى ب","مبنى ج","مبنى د","خارج الموقع"];
 
 function splitLocation(location?: string): { building: string; room: string } {
@@ -42,9 +48,11 @@ function buildFormFromAsset(asset: Asset | undefined) {
 export function AddAssetScreen({ onNavigate, assetId }: { onNavigate: NavigateFn; assetId?: string | null }) {
   const [section, setSection] = useState("basic");
   const { assets, addAsset, updateAsset } = useAssetsData();
+  const { users: apiUsers } = useUsersData();
   const asset = assetId ? assets.find(a => a.id === assetId) : undefined;
   const [form, setForm] = useState(() => buildFormFromAsset(asset));
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setForm(buildFormFromAsset(asset));
@@ -61,7 +69,9 @@ export function AddAssetScreen({ onNavigate, assetId }: { onNavigate: NavigateFn
     { id: "notes",     label: "ملاحظات ومرفقات",   num: "04" },
   ];
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (saving) return;
+
     const nextErrors: Record<string, string> = {};
     if (!form.name.trim()) nextErrors.name = "أدخل اسم الأصل";
     if (!form.category) nextErrors.category = "اختر فئة الأصل";
@@ -82,7 +92,7 @@ export function AddAssetScreen({ onNavigate, assetId }: { onNavigate: NavigateFn
       name: form.name.trim(),
       serial: form.serial.trim(),
       model: form.model.trim(),
-      category: form.category,
+      category: form.category as (typeof CATEGORY_OPTIONS)[number],
       businessCriticality: form.criticality as (typeof BUSINESS_CRITICALITY_OPTIONS)[number],
       manufacturer: form.manufacturer.trim(),
       departmentId: form.departmentId,
@@ -93,14 +103,27 @@ export function AddAssetScreen({ onNavigate, assetId }: { onNavigate: NavigateFn
       value: Number(form.value),
     };
 
-    if (asset) {
-      updateAsset(asset.id, input);
-      toast.success("تم حفظ التعديلات بنجاح", asset.name);
-    } else {
-      const created = addAsset(input);
-      toast.success("تمت إضافة الأصل بنجاح", created.id);
+    setSaving(true);
+
+    try {
+      if (asset) {
+        updateAsset(asset.id, input);
+        toast.success("تم حفظ التعديلات بنجاح", asset.name);
+      } else {
+        const createdAssetId = await addAsset(input);
+        toast.success("تمت إضافة الأصل بنجاح", createdAssetId);
+      }
+      onNavigate("assets");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "حدث خطأ غير متوقع أثناء حفظ الأصل";
+
+      toast.error("تعذّر الحفظ", message);
+    } finally {
+      setSaving(false);
     }
-    onNavigate("assets");
   };
 
   return (
@@ -139,7 +162,7 @@ export function AddAssetScreen({ onNavigate, assetId }: { onNavigate: NavigateFn
               <Inp label="الرقم التسلسلي"  placeholder="SN-XXXX-0000" value={form.serial} onChange={set("serial")} />
               <Inp label="رقم الموديل"     placeholder="رقم الموديل أو الطراز" value={form.model} onChange={set("model")} />
               <div>
-                <Sel label="فئة الأصل" required options={CATEGORY_OPTIONS} placeholder="اختر الفئة" value={form.category} onChange={set("category")} />
+                <Sel label="فئة الأصل" required options={[...CATEGORY_OPTIONS]} placeholder="اختر الفئة" value={form.category} onChange={set("category")} />
                 {errors.category && <p className="text-xs text-[#C44D4D] mt-1">{errors.category}</p>}
               </div>
               <div>
@@ -181,8 +204,8 @@ export function AddAssetScreen({ onNavigate, assetId }: { onNavigate: NavigateFn
                     focus:outline-none focus:ring-2 focus:ring-[#D0A165]/30 focus:border-[#D0A165] transition-all appearance-none cursor-pointer"
                 >
                   <option value="">غير مسند</option>
-                  {DEMO_USERS.map(u => (
-                    <option key={u.id} value={u.id}>{u.firstName}</option>
+                  {apiUsers.filter(u => u.status === "active").map(u => (
+                    <option key={u.apiId} value={u.apiId}>{u.name}</option>
                   ))}
                 </select>
               </div>
@@ -233,7 +256,14 @@ export function AddAssetScreen({ onNavigate, assetId }: { onNavigate: NavigateFn
       </Card>
 
       <div className="flex items-center gap-3">
-        <Btn variant="primary" icon={<CheckCircle size={15} />} onClick={handleSave}>{asset ? "حفظ التعديلات" : "حفظ الأصل"}</Btn>
+        <Btn
+          variant="primary"
+          icon={<CheckCircle size={15} />}
+          disabled={saving}
+          onClick={() => void handleSave()}
+        >
+          {saving ? "جارٍ الحفظ..." : asset ? "حفظ التعديلات" : "حفظ الأصل"}
+        </Btn>
         <Btn variant="secondary" onClick={() => onNavigate("assets")}>إلغاء</Btn>
       </div>
     </div>

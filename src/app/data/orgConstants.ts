@@ -1,5 +1,9 @@
 // ─────────────────────────────────────────────
-// Organizational structure — stable IDs for mock data
+// Organizational structure — frontend forms until GET /sectors and GET /departments exist.
+// TODO: Replace with API-backed org data when backend exposes:
+//   GET /api/v1/sectors
+//   GET /api/v1/departments
+// Asset list department display uses API `department` text; scope IDs come from API when available.
 // ─────────────────────────────────────────────
 
 export interface OrgSector {

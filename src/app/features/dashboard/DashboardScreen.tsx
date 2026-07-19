@@ -8,7 +8,6 @@ import {
   CartesianGrid, XAxis, YAxis, Tooltip,
 } from "recharts";
 import type { NavigateFn, Screen } from "../../types";
-import { ASSET_HISTORY } from "../../data/mock";
 import { Btn, Card, Chip } from "../../components/shared";
 import { useAuth, hasPermission, hasReportsAccess, SCREEN_PERMISSIONS } from "../../auth";
 import { buildScopedDashboardView, getVisibleAssetsForUser } from "../../utils/assetScope";
@@ -35,7 +34,7 @@ export function DashboardScreen({ onNavigate, onOpenAsset }: {
   );
 
   const dashboardView = useMemo(
-    () => buildScopedDashboardView(visibleAssets, ASSET_HISTORY),
+    () => buildScopedDashboardView(visibleAssets, []),
     [visibleAssets],
   );
 

@@ -6,6 +6,7 @@ import type { Asset } from "../../types";
 import { ASSET_HISTORY, STATUS } from "../../data/mock";
 import { Card, Chip, EmptyState } from "../../components/shared";
 import { WARRANTY_META, getWarrantyState } from "../../utils/warranty";
+import { getAssetCategoryDisplayLabel } from "../../utils/assetMappings";
 import { getAssetAssigneeName } from "../../utils/userDisplay";
 
 // ─────────────────────────────────────────────
@@ -86,7 +87,7 @@ function GeneralContent({ asset }: { asset: Asset }) {
         </div>
         <h3 className="text-sm font-bold text-[#2B2B2B] leading-snug break-words">{asset.name}</h3>
         <p className="text-[11px] font-mono text-[#6B7280] mt-0.5">{asset.id}</p>
-        <p className="text-xs text-[#6B7280] mt-0.5">{asset.category}</p>
+        <p className="text-xs text-[#6B7280] mt-0.5">{getAssetCategoryDisplayLabel(asset)}</p>
         <div className="flex items-center gap-2 flex-wrap mt-2.5">
           <Chip status={asset.status} />
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap"

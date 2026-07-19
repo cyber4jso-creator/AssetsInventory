@@ -1,4 +1,5 @@
-﻿import type { UserRecord } from "../contexts/UsersDataContext";
+﻿import { getDepartmentById } from "../../../data/orgConstants";
+import type { UserRecord } from "../contexts/UsersDataContext";
 import type { ApiUser } from "../services/usersApiService";
 
 function stableNumericId(value: string): number {
@@ -17,17 +18,25 @@ function stableNumericId(value: string): number {
   return hash;
 }
 
+function mapApiStatus(status: ApiUser["status"]): UserRecord["status"] {
+  return status === "Inactive" ? "inactive" : "active";
+}
+
 export function mapApiUserToUserRecord(apiUser: ApiUser): UserRecord {
-  const normalizedStatus = apiUser.status?.trim().toLowerCase();
+  const departmentId = apiUser.department_id ?? "";
 
   return {
     id: stableNumericId(apiUser.user_id),
     apiId: apiUser.user_id,
-    name: apiUser.full_name ?? "",
-    email: apiUser.email ?? "",
+    name: apiUser.full_name,
+    email: apiUser.email,
+    roleId: apiUser.roles?.role_id ?? null,
     role: apiUser.roles?.role_name ?? "",
-    department: apiUser.department_id ?? "",
-    status: normalizedStatus === "inactive" ? "inactive" : "active",
+    departmentId,
+    department:
+      getDepartmentById(departmentId)?.name ??
+      departmentId,
+    status: mapApiStatus(apiUser.status),
     lastLogin: "—",
   };
 }

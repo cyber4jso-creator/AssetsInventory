@@ -6,45 +6,28 @@
   useState,
   type ReactNode,
 } from "react";
-import type { Asset, BusinessCriticality } from "../../../types";
-import { ASSETS as INITIAL_ASSETS } from "../../../data/mock";
+import type { Asset } from "../../../types";
 import { getDepartmentById } from "../../../data/orgConstants";
-import { MOCK_TODAY } from "../../../data/mockReferenceDate";
-import { fetchAllAssets } from "../services/assetsApiService";
+import {
+  createAsset,
+  fetchAllAssets,
+  type CreateAssetInput,
+} from "../services/assetsApiService";
 
-export interface NewAssetInput {
-  name: string;
-  serial: string;
-  model: string;
-  category: string;
-  businessCriticality: BusinessCriticality;
-  manufacturer: string;
-  departmentId: string;
-  location: string;
-  assignedUserId: string | null;
-  purchaseDate: string;
-  warrantyExpiration: string;
-  value: number;
-}
+export type NewAssetInput = CreateAssetInput;
 
 interface AssetsDataContextValue {
   assets: Asset[];
   loading: boolean;
   error: string | null;
   refreshAssets: () => Promise<void>;
-  addAsset: (input: NewAssetInput) => Asset;
+  addAsset: (input: NewAssetInput) => Promise<string>;
   updateAsset: (id: string, input: NewAssetInput) => void;
   archiveAsset: (id: string) => void;
   deleteAsset: (id: string) => void;
 }
 
 const AssetsDataContext = createContext<AssetsDataContextValue | null>(null);
-
-function nextAssetId(existing: Asset[]): string {
-  const year = MOCK_TODAY.getFullYear();
-  const seq = existing.length + 1;
-  return `AST-${year}-${String(seq).padStart(4, "0")}`;
-}
 
 function toAssetFields(input: NewAssetInput) {
   const dept = getDepartmentById(input.departmentId);
@@ -70,7 +53,7 @@ function toAssetFields(input: NewAssetInput) {
 }
 
 export function AssetsDataProvider({ children }: { children: ReactNode }) {
-  const [assets, setAssets] = useState<Asset[]>(INITIAL_ASSETS);
+  const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -98,21 +81,11 @@ export function AssetsDataProvider({ children }: { children: ReactNode }) {
     void refreshAssets();
   }, [refreshAssets]);
 
-  const addAsset = useCallback((input: NewAssetInput): Asset => {
-    let created!: Asset;
-
-    setAssets((previous) => {
-      created = {
-        id: nextAssetId(previous),
-        status: "active",
-        ...toAssetFields(input),
-      };
-
-      return [created, ...previous];
-    });
-
-    return created;
-  }, []);
+  const addAsset = useCallback(async (input: NewAssetInput): Promise<string> => {
+    const createdAssetId = await createAsset(input);
+    await refreshAssets();
+    return createdAssetId;
+  }, [refreshAssets]);
 
   const updateAsset = useCallback((id: string, input: NewAssetInput) => {
     setAssets((previous) =>

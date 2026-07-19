@@ -7,12 +7,11 @@
   type ReactNode,
 } from "react";
 import type { Role } from "../../../auth";
-import { ROLE_LABELS } from "../../../auth";
-
 import {
   createUser as createApiUser,
   fetchUsers,
   updateUserStatus as updateApiUserStatus,
+  type UpdateUserStatusPayload,
 } from "../services/usersApiService";
 import { mapApiUserToUserRecord } from "../mappers/user.mapper";
 
@@ -21,7 +20,9 @@ export interface UserRecord {
   apiId: string;
   name: string;
   email: string;
+  roleId: number | null;
   role: string;
+  departmentId: string;
   department: string;
   status: "active" | "inactive";
   lastLogin: string;
@@ -35,6 +36,14 @@ export interface NewUserInput {
   status: "active" | "inactive";
 }
 
+export const ROLE_IDS: Record<Role, number> = {
+  employee: 10,
+  "department-manager": 11,
+  "sector-manager": 12,
+  "asset-manager": 13,
+  auditor: 14,
+};
+
 interface UsersDataContextValue {
   users: UserRecord[];
   loading: boolean;
@@ -42,17 +51,11 @@ interface UsersDataContextValue {
   refreshUsers: () => Promise<void>;
   isDuplicateEmail: (email: string) => boolean;
   addUser: (input: NewUserInput) => Promise<UserRecord>;
-  toggleUserStatus: (id: number) => Promise<void>;
+  updateUserStatus: (
+    apiId: string,
+    payload: UpdateUserStatusPayload,
+  ) => Promise<void>;
 }
-
-const ROLE_IDS: Record<Role, number> = {
-  "super-admin": 9,
-  employee: 10,
-  "department-manager": 11,
-  "sector-manager": 12,
-  "asset-manager": 13,
-  auditor: 14,
-};
 
 const UsersDataContext = createContext<UsersDataContextValue | null>(null);
 
@@ -82,8 +85,40 @@ export function UsersDataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void refreshUsers();
-  }, [refreshUsers]);
+    const controller = new AbortController();
+
+    const loadUsers = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const apiUsers = await fetchUsers(controller.signal);
+        setUsers(apiUsers.map(mapApiUserToUserRecord));
+      } catch (requestError) {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        const message =
+          requestError instanceof Error
+            ? requestError.message
+            : "فشل تحميل المستخدمين";
+
+        setError(message);
+        console.error("Users API error:", requestError);
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadUsers();
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
 
   const isDuplicateEmail = useCallback(
     (email: string) => {
@@ -98,46 +133,29 @@ export function UsersDataProvider({ children }: { children: ReactNode }) {
   const addUser = useCallback(
     async (input: NewUserInput): Promise<UserRecord> => {
       const apiUser = await createApiUser({
-        fullName: input.firstName,
-        email: input.email,
+        fullName: input.firstName.trim(),
+        email: input.email.trim().toLowerCase(),
         roleId: ROLE_IDS[input.role],
-        departmentId: input.departmentId,
+        departmentId: input.departmentId || undefined,
         status: input.status === "active" ? "Active" : "Inactive",
       });
 
-      const created = mapApiUserToUserRecord(apiUser);
+      await refreshUsers();
 
-      setUsers((previous) => [...previous, created]);
-      return created;
+      return mapApiUserToUserRecord(apiUser);
     },
-    [],
+    [refreshUsers],
   );
 
-  const toggleUserStatus = useCallback(
-    async (id: number): Promise<void> => {
-      const currentUser = users.find((user) => user.id === id);
-
-      if (!currentUser) {
-        throw new Error("المستخدم غير موجود");
-      }
-
-      const nextStatus =
-        currentUser.status === "active" ? "Inactive" : "Active";
-
-      const updatedApiUser = await updateApiUserStatus(
-        currentUser.apiId,
-        nextStatus,
-      );
-
-      const updatedUser = mapApiUserToUserRecord(updatedApiUser);
-
-      setUsers((previous) =>
-        previous.map((user) =>
-          user.apiId === updatedUser.apiId ? updatedUser : user,
-        ),
-      );
+  const updateUserStatus = useCallback(
+    async (
+      apiId: string,
+      payload: UpdateUserStatusPayload,
+    ): Promise<void> => {
+      await updateApiUserStatus(apiId, payload);
+      await refreshUsers();
     },
-    [users],
+    [refreshUsers],
   );
 
   return (
@@ -149,7 +167,7 @@ export function UsersDataProvider({ children }: { children: ReactNode }) {
         refreshUsers,
         isDuplicateEmail,
         addUser,
-        toggleUserStatus,
+        updateUserStatus,
       }}
     >
       {children}
@@ -168,4 +186,3 @@ export function useUsersData() {
 
   return context;
 }
-
