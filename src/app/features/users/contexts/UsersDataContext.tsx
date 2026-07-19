@@ -8,7 +8,7 @@
 } from "react";
 import type { Role } from "../../../auth";
 import { ROLE_LABELS } from "../../../auth";
-import { getDepartmentById } from "../../../data/orgConstants";
+
 import {
   createUser as createApiUser,
   fetchUsers,
@@ -97,15 +97,11 @@ export function UsersDataProvider({ children }: { children: ReactNode }) {
 
   const addUser = useCallback(
     async (input: NewUserInput): Promise<UserRecord> => {
-      const departmentName =
-        getDepartmentById(input.departmentId)?.name ??
-        input.departmentId;
-
       const apiUser = await createApiUser({
         fullName: input.firstName,
         email: input.email,
         roleId: ROLE_IDS[input.role],
-        departmentId: departmentName,
+        departmentId: input.departmentId,
         status: input.status === "active" ? "Active" : "Inactive",
       });
 
@@ -172,3 +168,4 @@ export function useUsersData() {
 
   return context;
 }
+

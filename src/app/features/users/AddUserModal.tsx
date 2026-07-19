@@ -36,7 +36,7 @@ export function AddUserModal({ open, onOpenChange }: {
 
   const departmentOptions = sectorId ? getDepartmentsBySector(sectorId) : [];
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const nextErrors: Record<string, string> = {};
     if (!firstName.trim()) nextErrors.firstName = "أدخل الاسم الأول";
     if (!email.trim()) nextErrors.email = "أدخل البريد الإلكتروني";
@@ -51,9 +51,29 @@ export function AddUserModal({ open, onOpenChange }: {
       return;
     }
 
-    addUser({ firstName: firstName.trim(), email: email.trim(), role: role as Role, departmentId, status });
-    toast.success("تمت إضافة المستخدم بنجاح", `${firstName} — ${ROLE_LABELS[role as Role]}`);
-    onOpenChange(false);
+    try {
+      await addUser({
+        firstName: firstName.trim(),
+        email: email.trim(),
+        role: role as Role,
+        departmentId,
+        status,
+      });
+    
+      toast.success(
+        "تمت إضافة المستخدم بنجاح",
+        `${firstName} — ${ROLE_LABELS[role as Role]}`,
+      );
+    
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Create user error:", error);
+    
+      toast.error(
+        "تعذرت إضافة المستخدم",
+        "تحققي من البيانات واتصال الخادم",
+      );
+    }
   };
 
   return (
